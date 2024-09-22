@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatelessWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +13,7 @@ class SplashScreen extends StatelessWidget {
             end: Alignment.bottomCenter,
             colors: [
               Color(0xFFE6E6FA), // Light lavender
-              const Color(0xFF5300F9), // Deep purple
+              Color(0xFF5300F9), // Deep purple
             ],
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:good2go_app/register_chose.dart';
 
 void main() {
   runApp(const MyApp());
@@ -128,25 +129,30 @@ class LoginPage extends StatelessWidget {
                       const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {},
-                        child: const Text(
-                          'เข้าสู่ระบบ',
-                          style: TextStyle(fontFamily: 'Roboto'),
-                        ),
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.white,
                           backgroundColor: const Color(0xFF5300F9),
                           minimumSize: const Size(double.infinity, 50),
                         ),
+                        child: const Text(
+                          'เข้าสู่ระบบ',
+                          style: TextStyle(fontFamily: 'Roboto'),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const RegisterSelectPage()),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF5300F9),
+                        ),
                         child: const Text(
                           'สมัครสมาชิก',
                           style: TextStyle(fontFamily: 'Roboto'),
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF5300F9),
                         ),
                       ),
                     ],
