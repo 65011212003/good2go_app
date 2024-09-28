@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:good2go_app/add_product_sender.dart';
 import 'package:good2go_app/delivery_detail.dart';
-import 'package:good2go_app/finish_sender.dart';  
+import 'package:good2go_app/finish_sender.dart';
+import 'package:good2go_app/map_receive.dart';  
 import 'package:good2go_app/map_sender.dart';
 import 'package:good2go_app/picture_sender.dart';
+import 'package:good2go_app/receive_package.dart';
 import 'package:good2go_app/register_chose.dart';
 import 'package:good2go_app/select_receiver.dart';
 import 'package:good2go_app/send_package.dart';
@@ -22,9 +24,9 @@ class MyApp extends StatelessWidget {
       title: 'Good2Go',
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Roboto', // Set Roboto as the default font
+        fontFamily: 'Roboto',
       ),
-      home: const MapSender(),
+      home: const MapReceive(),
     );
   }
 }
