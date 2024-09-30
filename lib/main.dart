@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:good2go_app/add_product_sender.dart';
-import 'package:good2go_app/delivery_detail.dart';
-import 'package:good2go_app/finish_sender.dart';
-import 'package:good2go_app/map_receive.dart';  
-import 'package:good2go_app/map_sender.dart';
-import 'package:good2go_app/picture_sender.dart';
-import 'package:good2go_app/receive_package.dart';
 import 'package:good2go_app/register_chose.dart';
-import 'package:good2go_app/select_receiver.dart';
-import 'package:good2go_app/send_package.dart';
-import 'package:good2go_app/sender_home.dart';
+import 'package:good2go_app/edit_profile.dart';
+import 'package:good2go_app/rider/rider_home.dart';
+import 'package:good2go_app/rider/rider_send_state.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,7 +19,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      home: const MapReceive(),
+      home: const RiderSendState(),
     );
   }
 }
