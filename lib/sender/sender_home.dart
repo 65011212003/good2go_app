@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:good2go_app/sender/send_package.dart';
 
 class SenderHome extends StatefulWidget {
   const SenderHome({super.key});
@@ -137,7 +138,12 @@ class _SenderHomeState extends State<SenderHome> {
                       child: Row(
                         children: [
                           ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const SendPackage()),
+                              );
+                            },
                             icon: const Icon(Icons.list_alt, color: Colors.white),
                             label: const Text('ส่งสินค้า', style: TextStyle(color: Colors.white)),
                             style: ElevatedButton.styleFrom(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_stepper/easy_stepper.dart';
+import 'package:good2go_app/sender/add_product_sender.dart';
+import 'package:good2go_app/sender/picture_sender.dart';
 
 class DeliveryDetail extends StatefulWidget {
   const DeliveryDetail({Key? key}) : super(key: key);
@@ -114,7 +116,12 @@ class _DeliveryDetailState extends State<DeliveryDetail> {
                         children: [
                           const Text('รายการจัดส่ง (0)', style: TextStyle(fontSize: 16)),
                           ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const AddProductSender()),
+                              );
+                            },
                             icon: const Icon(Icons.add, color: Colors.white),
                             label: const Text('เพิ่ม', style: TextStyle(color: Colors.white)),
                             style: ElevatedButton.styleFrom(
@@ -138,7 +145,12 @@ class _DeliveryDetailState extends State<DeliveryDetail> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PictureSender()),
+                    );
+                  },
                   icon: const Icon(Icons.send, color: Colors.white),
                   label: const Text('ส่งสินค้า', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(

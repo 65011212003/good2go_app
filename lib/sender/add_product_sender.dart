@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AddProductSender extends StatefulWidget {
   const AddProductSender({Key? key}) : super(key: key);
@@ -8,6 +10,19 @@ class AddProductSender extends StatefulWidget {
 }
 
 class _AddProductSenderState extends State<AddProductSender> {
+  File? _image;
+  final picker = ImagePicker();
+
+  Future getImage(ImageSource source) async {
+    final pickedFile = await picker.pickImage(source: source);
+
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,7 +60,7 @@ class _AddProductSenderState extends State<AddProductSender> {
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () {},
+                              onPressed: () => getImage(ImageSource.gallery),
                               icon: const Icon(Icons.image, color: Colors.white),
                               label: const Text('เลือกรูป', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
@@ -59,7 +74,7 @@ class _AddProductSenderState extends State<AddProductSender> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () {},
+                              onPressed: () => getImage(ImageSource.camera),
                               icon: const Icon(Icons.camera_alt, color: Colors.white),
                               label: const Text('ถ่ายรูป', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
@@ -76,11 +91,17 @@ class _AddProductSenderState extends State<AddProductSender> {
                       
                       // Product Image
                       Center(
-                        child: Image.network(
-                          'https://m.media-amazon.com/images/I/81hyQ4lDygL._AC_UF894,1000_QL80_.jpg', // Replace with actual image URL
-                          height: 200,
-                          fit: BoxFit.contain,
-                        ),
+                        child: _image != null
+                            ? Image.file(
+                                _image!,
+                                height: 200,
+                                fit: BoxFit.contain,
+                              )
+                            : Image.network(
+                                'https://m.media-amazon.com/images/I/81hyQ4lDygL._AC_UF894,1000_QL80_.jpg', // Replace with actual image URL
+                                height: 200,
+                                fit: BoxFit.contain,
+                              ),
                       ),
                       const SizedBox(height: 16),
                       

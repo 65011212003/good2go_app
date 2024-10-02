@@ -40,6 +40,9 @@ dependencies:
   timeline_tile: ^2.0.0
   latlong2: ^0.9.1
   flutter_map: ^7.0.2
+  provider: ^6.1.2
+  geolocator: ^13.0.1
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

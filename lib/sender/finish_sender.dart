@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:good2go_app/sender/send_package.dart';
 
 class FinishSender extends StatefulWidget {
   const FinishSender({Key? key}) : super(key: key);
@@ -122,7 +123,12 @@ class _FinishSenderState extends State<FinishSender> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const SendPackage()),
+                            );
+                          },
                           child: const Text('ตกลง', style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF5300F9),

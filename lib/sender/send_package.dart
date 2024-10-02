@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:good2go_app/sender/select_receiver.dart';
 
 class SendPackage extends StatefulWidget {
   const SendPackage({Key? key}) : super(key: key);
@@ -38,7 +39,12 @@ class _SendPackageState extends State<SendPackage> {
                     ),
                   ),
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SelectReceiver()),
+                      );
+                    },
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('เพิ่มรายการ'),
                     style: ElevatedButton.styleFrom(

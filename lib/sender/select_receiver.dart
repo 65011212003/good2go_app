@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:good2go_app/receiver/delivery_detail.dart';
+import 'package:good2go_app/sender/add_product_sender.dart';
+import 'package:good2go_app/sender/picture_sender.dart';
 
 class SelectReceiver extends StatefulWidget {
   const SelectReceiver({Key? key}) : super(key: key);
@@ -133,7 +136,12 @@ class ReceiverCard extends StatelessWidget {
               ),
             ),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DeliveryDetail()),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 shape: RoundedRectangleBorder(

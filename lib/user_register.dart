@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:good2go_app/main.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class UserRegister extends StatefulWidget {
   const UserRegister({super.key});
@@ -9,6 +15,19 @@ class UserRegister extends StatefulWidget {
 
 class _UserRegisterState extends State<UserRegister> {
   final _formKey = GlobalKey<FormState>();
+  LatLng _selectedLocation = LatLng(13.7563, 100.5018); // Default to Bangkok
+  File? _image;
+  final picker = ImagePicker();
+
+  Future getImage(ImageSource source) async {
+    final pickedFile = await picker.pickImage(source: source);
+
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,11 +85,13 @@ class _UserRegisterState extends State<UserRegister> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
+                                _buildProfileImagePicker(),
                                 _buildTextField('เบอร์โทรศัพท์'),
                                 _buildTextField('ชื่อ - สกุล'),
                                 _buildTextField('รหัสผ่าน', isPassword: true),
-                                _buildTextField('รหัสผ่าน', isPassword: true),
+                                _buildTextField('ยืนยันรหัสผ่าน', isPassword: true),
                                 _buildTextField('ที่อยู่', maxLines: 3),
+                                _buildLocationMap(),
                                 const Spacer(),
                                 ElevatedButton(
                                   onPressed: () {
@@ -95,7 +116,10 @@ class _UserRegisterState extends State<UserRegister> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Navigate to login page
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                          );
                         },
                         child: const Text(
                           'เข้าสู่ระบบ',
@@ -111,6 +135,39 @@ class _UserRegisterState extends State<UserRegister> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileImagePicker() {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 50,
+          backgroundColor: Colors.grey[200],
+          backgroundImage: _image != null ? FileImage(_image!) : null,
+          child: _image == null
+              ? Icon(Icons.person, size: 50, color: Colors.grey[800])
+              : null,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () => getImage(ImageSource.camera),
+              icon: const Icon(Icons.camera_alt),
+              label: const Text('กล้อง'),
+            ),
+            const SizedBox(width: 10),
+            ElevatedButton.icon(
+              onPressed: () => getImage(ImageSource.gallery),
+              icon: const Icon(Icons.photo_library),
+              label: const Text('แกลเลอรี่'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
@@ -133,6 +190,69 @@ class _UserRegisterState extends State<UserRegister> {
           }
           return null;
         },
+      ),
+    );
+  }
+
+  Widget _buildLocationMap() {
+    return Container(
+      height: 200,
+      margin: const EdgeInsets.only(bottom: 15),
+      child: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: _selectedLocation,
+              initialZoom: 13.0,
+              onTap: (tapPosition, point) {
+                setState(() {
+                  _selectedLocation = point;
+                });
+              },
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: ['a', 'b', 'c'],
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    width: 80.0,
+                    height: 80.0,
+                    point: _selectedLocation,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 40.0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              onPressed: () async {
+                try {
+                  Position position = await Geolocator.getCurrentPosition(
+                    desiredAccuracy: LocationAccuracy.high
+                  );
+                  setState(() {
+                    _selectedLocation = LatLng(position.latitude, position.longitude);
+                  });
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('ไม่สามารถระบุตำแหน่งได้: $e')),
+                  );
+                }
+              },
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+        ],
       ),
     );
   }

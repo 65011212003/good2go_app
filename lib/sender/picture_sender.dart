@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easy_stepper/easy_stepper.dart';
+import 'package:good2go_app/sender/finish_sender.dart';
 
 class PictureSender extends StatefulWidget {
   const PictureSender({Key? key}) : super(key: key);
@@ -139,7 +140,12 @@ class _PictureSenderState extends State<PictureSender> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const FinishSender()),
+                            );
+                          },
                           child: const Text('สร้างรายการ', style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xBF5300F9),
