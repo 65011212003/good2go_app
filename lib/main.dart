@@ -1,15 +1,19 @@
-    // Start of Selection
     import 'package:flutter/material.dart';
-import 'package:good2go_app/sender/sender_home.dart';
-    import 'package:provider/provider.dart';
+    // ignore: unused_import
+    import 'package:good2go_app/sender/sender_home.dart';
     import 'package:good2go_app/register_chose.dart';
     import 'package:good2go_app/rider/rider_send_state.dart';
+    import 'package:good2go_app/services/apiServices.dart';
+    import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
+    import 'package:provider/provider.dart' as provider;
     
     void main() {
       runApp(
-        ChangeNotifierProvider(
-          create: (context) => AppState(),
-          child: const MyApp(),
+        riverpod.ProviderScope(
+          child: provider.ChangeNotifierProvider<AppState>(
+            create: (_) => AppState(),
+            child: const MyApp(),
+          ),
         ),
       );
     }
@@ -38,7 +42,7 @@ import 'package:good2go_app/sender/sender_home.dart';
       const SplashScreen({super.key});
     
       @override
-      _SplashScreenState createState() => _SplashScreenState();
+      State<SplashScreen> createState() => _SplashScreenState();
     }
     
     class _SplashScreenState extends State<SplashScreen> {
@@ -46,9 +50,11 @@ import 'package:good2go_app/sender/sender_home.dart';
       void initState() {
         super.initState();
         Future.delayed(const Duration(seconds: 3), () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const LoginPage()),
-          );
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const LoginPage()),
+            );
+          }
         });
       }
     
@@ -82,14 +88,14 @@ import 'package:good2go_app/sender/sender_home.dart';
       }
     }
     
-    class LoginPage extends StatefulWidget {
+    class LoginPage extends riverpod.ConsumerStatefulWidget {
       const LoginPage({super.key});
     
       @override
-      _LoginPageState createState() => _LoginPageState();
+      riverpod.ConsumerState<LoginPage> createState() => _LoginPageState();
     }
     
-    class _LoginPageState extends State<LoginPage> {
+    class _LoginPageState extends riverpod.ConsumerState<LoginPage> {
       final TextEditingController _phoneController = TextEditingController();
       final TextEditingController _passwordController = TextEditingController();
       bool _isLoading = false;
@@ -108,13 +114,18 @@ import 'package:good2go_app/sender/sender_home.dart';
           _errorMessage = null;
         });
         try {
-          // Implement login logic here without using ApiService
-          // For now, we'll just simulate a successful login
-          await Future.delayed(const Duration(seconds: 2)); // Simulating network delay
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const RiderSendState()),
+          final apiService = ref.read(apiServiceProvider);
+          await apiService.login(
+            _phoneController.text,
+            _passwordController.text,
           );
+          // Handle successful login
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const RiderSendState()),
+            );
+          }
         } catch (e) {
           setState(() {
             _errorMessage = 'An error occurred. Please try again.';
@@ -187,12 +198,7 @@ import 'package:good2go_app/sender/sender_home.dart';
                           _isLoading
                               ? const CircularProgressIndicator()
                               : ElevatedButton(
-                                  onPressed: () {
-                                    _login();
-                                    Navigator.of(context).pushReplacement(
-                                      MaterialPageRoute(builder: (context) => const SenderHome()),
-                                    );
-                                  },
+                                  onPressed: _login,
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white,
                                     backgroundColor: const Color(0xFF5300F9),

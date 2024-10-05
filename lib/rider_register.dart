@@ -1,14 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:good2go_app/services/apiServices.dart';
 
-class RiderRegister extends StatefulWidget {
+class RiderRegister extends ConsumerStatefulWidget {
   const RiderRegister({super.key});
 
   @override
-  State<RiderRegister> createState() => _RiderRegisterState();
+  ConsumerState<RiderRegister> createState() => _RiderRegisterState();
 }
 
-class _RiderRegisterState extends State<RiderRegister> {
+class _RiderRegisterState extends ConsumerState<RiderRegister> {
   final _formKey = GlobalKey<FormState>();
+  final _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _vehicleRegistrationController = TextEditingController();
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _nameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _addressController.dispose();
+    _vehicleRegistrationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final apiService = ref.read(apiServiceProvider);
+        final userData = {
+          'phone_number': _phoneController.text,
+          'name': _nameController.text,
+          'password': _passwordController.text,
+          'address': _addressController.text,
+          'vehicle_registration': _vehicleRegistrationController.text,
+          'user_type': 'rider',
+        };
+        await apiService.createUser(userData);
+        // Handle successful registration
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ลงทะเบียนสำเร็จ')),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        // Handle registration error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เกิดข้อผิดพลาด: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,19 +114,15 @@ class _RiderRegisterState extends State<RiderRegister> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-                                _buildTextField('เบอร์โทรศัพท์'),
-                                _buildTextField('ชื่อ - สกุล'),
-                                _buildTextField('รหัสผ่าน', isPassword: true),
-                                _buildTextField('รหัสผ่าน', isPassword: true),
-                                _buildTextField('ที่อยู่', maxLines: 3),
-                                _buildTextField('ทะเบียนรถ'),
+                                _buildTextField('เบอร์โทรศัพท์', _phoneController),
+                                _buildTextField('ชื่อ - สกุล', _nameController),
+                                _buildTextField('รหัสผ่าน', _passwordController, isPassword: true),
+                                _buildTextField('ยืนยันรหัสผ่าน', _confirmPasswordController, isPassword: true),
+                                _buildTextField('ที่อยู่', _addressController, maxLines: 3),
+                                _buildTextField('ทะเบียนรถ', _vehicleRegistrationController),
                                 const Spacer(),
                                 ElevatedButton(
-                                  onPressed: () {
-                                    if (_formKey.currentState!.validate()) {
-                                      // Process data
-                                    }
-                                  },
+                                  onPressed: _register,
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white,
                                     backgroundColor: const Color(0xFF5300F9),
@@ -96,7 +140,7 @@ class _RiderRegisterState extends State<RiderRegister> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Navigate to login page
+                          Navigator.pop(context);
                         },
                         child: const Text(
                           'เข้าสู่ระบบ',
@@ -115,10 +159,11 @@ class _RiderRegisterState extends State<RiderRegister> {
     );
   }
 
-  Widget _buildTextField(String label, {bool isPassword = false, int maxLines = 1}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: TextFormField(
+        controller: controller,
         obscureText: isPassword,
         maxLines: maxLines,
         decoration: InputDecoration(
@@ -131,6 +176,11 @@ class _RiderRegisterState extends State<RiderRegister> {
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'กรุณากรอก$label';
+          }
+          if (isPassword && controller == _confirmPasswordController) {
+            if (value != _passwordController.text) {
+              return 'รหัสผ่านไม่ตรงกัน';
+            }
           }
           return null;
         },

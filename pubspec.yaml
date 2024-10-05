@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   easy_stepper: ^0.8.3  # Add this line
-  
+  flutter_riverpod: ^2.0.0  # Add this line
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -43,6 +43,7 @@ dependencies:
   provider: ^6.1.2
   geolocator: ^13.0.1
   image_picker: ^1.1.2
+  riverpod: ^2.5.1
 
 dev_dependencies:
   flutter_test:

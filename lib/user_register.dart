@@ -5,19 +5,26 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:good2go_app/services/apiServices.dart';
 
-class UserRegister extends StatefulWidget {
+class UserRegister extends ConsumerStatefulWidget {
   const UserRegister({super.key});
 
   @override
-  State<UserRegister> createState() => _UserRegisterState();
+  ConsumerState<UserRegister> createState() => _UserRegisterState();
 }
 
-class _UserRegisterState extends State<UserRegister> {
+class _UserRegisterState extends ConsumerState<UserRegister> {
   final _formKey = GlobalKey<FormState>();
   LatLng _selectedLocation = LatLng(13.7563, 100.5018); // Default to Bangkok
   File? _image;
   final picker = ImagePicker();
+  final _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _addressController = TextEditingController();
 
   Future getImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
@@ -27,6 +34,34 @@ class _UserRegisterState extends State<UserRegister> {
         _image = File(pickedFile.path);
       }
     });
+  }
+
+  Future<void> _register() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final apiService = ref.read(apiServiceProvider);
+        final userData = {
+          'phone_number': _phoneController.text,
+          'name': _nameController.text,
+          'password': _passwordController.text,
+          'address': _addressController.text,
+          'latitude': _selectedLocation.latitude,
+          'longitude': _selectedLocation.longitude,
+          'user_type': 'user',
+        };
+        await apiService.createUser(userData);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ลงทะเบียนสำเร็จ')),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เกิดข้อผิดพลาด: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override
@@ -86,19 +121,15 @@ class _UserRegisterState extends State<UserRegister> {
                                 ),
                                 const SizedBox(height: 20),
                                 _buildProfileImagePicker(),
-                                _buildTextField('เบอร์โทรศัพท์'),
-                                _buildTextField('ชื่อ - สกุล'),
-                                _buildTextField('รหัสผ่าน', isPassword: true),
-                                _buildTextField('ยืนยันรหัสผ่าน', isPassword: true),
-                                _buildTextField('ที่อยู่', maxLines: 3),
+                                _buildTextField('เบอร์โทรศัพท์', _phoneController),
+                                _buildTextField('ชื่อ - สกุล', _nameController),
+                                _buildTextField('รหัสผ่าน', _passwordController, isPassword: true),
+                                _buildTextField('ยืนยันรหัสผ่าน', _confirmPasswordController, isPassword: true),
+                                _buildTextField('ที่อยู่', _addressController, maxLines: 3),
                                 _buildLocationMap(),
                                 const Spacer(),
                                 ElevatedButton(
-                                  onPressed: () {
-                                    if (_formKey.currentState!.validate()) {
-                                      // Process data
-                                    }
-                                  },
+                                  onPressed: _register,
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white,
                                     backgroundColor: const Color(0xFF5300F9),
@@ -171,10 +202,11 @@ class _UserRegisterState extends State<UserRegister> {
     );
   }
 
-  Widget _buildTextField(String label, {bool isPassword = false, int maxLines = 1}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: TextFormField(
+        controller: controller,
         obscureText: isPassword,
         maxLines: maxLines,
         decoration: InputDecoration(
