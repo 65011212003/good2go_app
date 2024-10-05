@@ -154,4 +154,30 @@ class ApiService {
       throw Exception('Failed to update rider location');
     }
   }
+
+
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    final response = await http.get(Uri.parse('$baseUrl/users'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> usersJson = json.decode(response.body);
+      return usersJson.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to get all users');
+    }
+  }
+
+  Future<Map<String, dynamic>> getUser(int userId) async {
+    final response = await http.get(Uri.parse('$baseUrl/users/$userId'));
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else if (response.statusCode == 404) {
+      throw Exception('User not found');
+    } else {
+      throw Exception('Failed to get user');
+    }
+  }
+  
+
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:good2go_app/receiver/delivery_detail.dart';
+// ignore: unused_import
 import 'package:good2go_app/sender/add_product_sender.dart';
+// ignore: unused_import
 import 'package:good2go_app/sender/picture_sender.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:good2go_app/services/apiServices.dart';
@@ -25,7 +27,7 @@ class _SelectReceiverState extends ConsumerState<SelectReceiver> {
   Future<void> fetchReceivers() async {
     try {
       final apiService = ref.read(apiServiceProvider);
-      final fetchedReceivers = await apiService.getReceivers();
+      final fetchedReceivers = await apiService.getAllUsers();
       setState(() {
         receivers = fetchedReceivers;
       });

@@ -2,19 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:easy_stepper/easy_stepper.dart';
 import 'package:good2go_app/sender/add_product_sender.dart';
 import 'package:good2go_app/sender/picture_sender.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:good2go_app/services/apiServices.dart';
 
-class DeliveryDetail extends StatefulWidget {
-  const DeliveryDetail({Key? key}) : super(key: key);
+class DeliveryDetail extends ConsumerStatefulWidget {
+  final Map<String, dynamic> receiver;
+
+  const DeliveryDetail({Key? key, required this.receiver}) : super(key: key);
 
   @override
-  State<DeliveryDetail> createState() => _DeliveryDetailState();
+  ConsumerState<DeliveryDetail> createState() => _DeliveryDetailState();
 }
 
-class _DeliveryDetailState extends State<DeliveryDetail> {
+class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
   int activeStep = 0;
 
   @override
   Widget build(BuildContext context) {
+    final apiService = ref.read(apiServiceProvider);
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
@@ -60,16 +66,14 @@ class _DeliveryDetailState extends State<DeliveryDetail> {
                                 child: const Icon(Icons.person, color: Colors.white, size: 40),
                               ),
                               const SizedBox(width: 16),
-                              const Expanded(
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Username', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    Text('ที่อยู่รับ :'),
-                                    Text('999 หมู่ 10 อ.แห่งหนึ่ง'),
-                                    Text('ต.หนึ่งแห่ง จ.นครสวรรค์'),
-                                    Text('525456'),
-                                    Text('โทรศัพท์ : 0899999999'),
+                                    Text(widget.receiver['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    const Text('ที่อยู่รับ :'),
+                                    Text(widget.receiver['address']),
+                                    Text('โทรศัพท์ : ${widget.receiver['phone_number']}'),
                                   ],
                                 ),
                               ),
@@ -85,7 +89,7 @@ class _DeliveryDetailState extends State<DeliveryDetail> {
                         stepShape: StepShape.circle,
                         stepBorderRadius: 15,
                         borderThickness: 2,
-                        padding: EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(20),
                         stepRadius: 28,
                         finishedStepBorderColor: const Color(0xBF5300F9),
                         finishedStepTextColor: const Color(0xBF5300F9),
@@ -145,11 +149,24 @@ class _DeliveryDetailState extends State<DeliveryDetail> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const PictureSender()),
-                    );
+                  onPressed: () async {
+                    try {
+                      // Create delivery using API
+                      Map<String, dynamic> deliveryData = {
+                        'receiver_id': widget.receiver['id'],
+                        // Add other necessary delivery data
+                      };
+                      await apiService.createDelivery(deliveryData);
+                      
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PictureSender()),
+                      );
+                    } catch (e) {
+                      // Handle error
+                      print('Failed to create delivery: $e');
+                      // Show error message to user
+                    }
                   },
                   icon: const Icon(Icons.send, color: Colors.white),
                   label: const Text('ส่งสินค้า', style: TextStyle(color: Colors.white)),
