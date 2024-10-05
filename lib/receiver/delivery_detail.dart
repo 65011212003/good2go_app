@@ -158,13 +158,17 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                       };
                       await apiService.createDelivery(deliveryData);
                       
+                      final createdDelivery = await apiService.createDelivery(deliveryData);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const PictureSender()),
+                        MaterialPageRoute(builder: (context) => PictureSender(deliveryId: createdDelivery['id'], receiver: widget.receiver)),
                       );
                     } catch (e) {
                       // Handle error
                       print('Failed to create delivery: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to create delivery: ${e.toString()}')),
+                      );
                       // Show error message to user
                     }
                   },

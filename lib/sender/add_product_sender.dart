@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:good2go_app/services/apiServices.dart';
 
-class AddProductSender extends StatefulWidget {
+class AddProductSender extends ConsumerStatefulWidget {
   const AddProductSender({Key? key}) : super(key: key);
 
   @override
-  State<AddProductSender> createState() => _AddProductSenderState();
+  ConsumerState<AddProductSender> createState() => _AddProductSenderState();
 }
 
-class _AddProductSenderState extends State<AddProductSender> {
+class _AddProductSenderState extends ConsumerState<AddProductSender> {
   File? _image;
   final picker = ImagePicker();
+  final TextEditingController _detailsController = TextEditingController();
 
   Future getImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
@@ -21,6 +24,42 @@ class _AddProductSenderState extends State<AddProductSender> {
         _image = File(pickedFile.path);
       }
     });
+  }
+
+  Future<void> _addProduct() async {
+    if (_image == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an image')),
+      );
+      return;
+    }
+
+    final apiService = ref.read(apiServiceProvider);
+    try {
+      // Assuming you have a method to get the current delivery ID
+      int deliveryId = 1; // Replace with actual delivery ID
+      
+      await apiService.uploadDeliveryPhoto(
+        deliveryId,
+        'product_added',
+        await _image!.readAsBytes(),
+        'product_image.jpg',
+      );
+
+      // Add product details if needed
+      if (_detailsController.text.isNotEmpty) {
+        await apiService.updateDeliveryStatus(deliveryId, _detailsController.text);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Product added successfully')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add product: $e')),
+      );
+    }
   }
 
   @override
@@ -117,9 +156,10 @@ class _AddProductSenderState extends State<AddProductSender> {
                           border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const TextField(
+                        child: TextField(
+                          controller: _detailsController,
                           maxLines: null,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             contentPadding: EdgeInsets.all(8),
                             border: InputBorder.none,
                           ),
@@ -132,7 +172,7 @@ class _AddProductSenderState extends State<AddProductSender> {
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () => Navigator.pop(context),
                               child: const Text('ยกเลิก', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
@@ -145,7 +185,7 @@ class _AddProductSenderState extends State<AddProductSender> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: _addProduct,
                               child: const Text('เพิ่ม', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
