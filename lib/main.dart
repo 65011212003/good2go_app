@@ -123,7 +123,7 @@
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const RiderSendState()),
+              MaterialPageRoute(builder: (context) => const SenderHome()),
             );
           }
         } catch (e) {
