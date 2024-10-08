@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:good2go_app/main.dart';
 import 'package:good2go_app/services/apiServices.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class EditProfile extends ConsumerStatefulWidget {
   const EditProfile({super.key});
@@ -11,11 +14,28 @@ class EditProfile extends ConsumerStatefulWidget {
 
 class _EditProfileState extends ConsumerState<EditProfile> {
   Map<String, dynamic>? _userData;
+  File? _image;
+  final ImagePicker _picker = ImagePicker();
+  
+  // Controllers for text fields
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchUserData() async {
@@ -25,11 +45,25 @@ class _EditProfileState extends ConsumerState<EditProfile> {
       final userData = await apiService.getUser(1);
       setState(() {
         _userData = userData;
+        _nameController.text = userData['name'] ?? '';
+        _phoneController.text = userData['phone_number'] ?? '';
+        _addressController.text = userData['address'] ?? '';
+        // Don't set the password, as it's likely not returned from the API for security reasons
       });
     } catch (e) {
       // Handle error
       print('Failed to fetch user data: $e');
     }
+  }
+
+  Future<void> _getImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+      }
+    });
   }
 
   @override
@@ -74,16 +108,21 @@ class _EditProfileState extends ConsumerState<EditProfile> {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.person, size: 80, color: Colors.black54),
+                      child: _image != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.file(_image!, fit: BoxFit.cover),
+                            )
+                          : const Icon(Icons.person, size: 80, color: Colors.black54),
                     ),
                   ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildImageButton(Icons.photo_library, 'เลือกรูป'),
+                      _buildImageButton(Icons.photo_library, 'เลือกรูป', () => _getImage(ImageSource.gallery)),
                       const SizedBox(width: 20),
-                      _buildImageButton(Icons.camera_alt, 'ถ่ายรูป'),
+                      _buildImageButton(Icons.camera_alt, 'ถ่ายรูป', () => _getImage(ImageSource.camera)),
                     ],
                   ),
                   const SizedBox(height: 30),
@@ -106,13 +145,10 @@ class _EditProfileState extends ConsumerState<EditProfile> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildTextField('Name', _userData!['name'] ?? ''),
-                        _buildTextField('Email', _userData!['email'] ?? ''),
-                        _buildTextField('Phone', _userData!['phone_number'] ?? ''),
-                        _buildTextField('Delivery address', _userData!['address'] ?? ''),
-                        _buildTextField('Password', '••••••••', isPassword: true),
-                        const SizedBox(height: 20),
-                        _buildGPSButton(),
+                        _buildTextField('Name', _nameController),
+                        _buildTextField('Phone', _phoneController),
+                        _buildTextField('Delivery address', _addressController),
+                        _buildTextField('Password', _passwordController, isPassword: true),
                         const SizedBox(height: 20),
                         Row(
                           children: [
@@ -130,11 +166,9 @@ class _EditProfileState extends ConsumerState<EditProfile> {
     );
   }
 
-  Widget _buildImageButton(IconData icon, String label) {
+  Widget _buildImageButton(IconData icon, String label, VoidCallback onPressed) {
     return ElevatedButton.icon(
-      onPressed: () {
-        // Add functionality
-      },
+      onPressed: onPressed,
       icon: Icon(icon, color: const Color(0xFF5300F9)),
       label: Text(label, style: const TextStyle(color: Color(0xFF5300F9))),
       style: ElevatedButton.styleFrom(
@@ -148,10 +182,11 @@ class _EditProfileState extends ConsumerState<EditProfile> {
     );
   }
 
-  Widget _buildTextField(String label, String value, {bool isPassword = false}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: TextField(
+        controller: controller,
         obscureText: isPassword,
         decoration: InputDecoration(
           labelText: label,
@@ -162,28 +197,8 @@ class _EditProfileState extends ConsumerState<EditProfile> {
           ),
           filled: true,
           fillColor: Colors.grey[100],
-          hintText: value,
           contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
         ),
-      ),
-    );
-  }
-
-  Widget _buildGPSButton() {
-    return ElevatedButton.icon(
-      onPressed: () {
-        // Add GPS functionality
-      },
-      icon: const Icon(Icons.gps_fixed),
-      label: const Text('GPS'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF5300F9).withOpacity(0.7),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        elevation: 5,
       ),
     );
   }
@@ -193,14 +208,34 @@ class _EditProfileState extends ConsumerState<EditProfile> {
       onPressed: () async {
         final apiService = ref.read(apiServiceProvider);
         try {
-          // Assuming you have the updated user data
-          await apiService.updateUser(_userData!['id'], _userData!);
+          if (_userData == null || _userData!['id'] == null) {
+            throw Exception('User data is not available');
+          }
+          final updatedUserData = {
+            if (_nameController.text.isNotEmpty) 'name': _nameController.text,
+            if (_phoneController.text.isNotEmpty) 'phone_number': _phoneController.text,
+            if (_addressController.text.isNotEmpty) 'address': _addressController.text,
+            if (_passwordController.text.isNotEmpty) 'password': _passwordController.text,
+          };
+          if (updatedUserData.isEmpty && _image == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No changes to update')),
+            );
+            return;
+          }
+          await apiService.updateUser(_userData!['id'], updatedUserData, profilePicture: _image);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully')),
           );
         } catch (e) {
+          String errorMessage = 'Failed to update profile';
+          if (e.toString().contains('Failed to upload image to Imgur')) {
+            errorMessage = 'Failed to upload profile picture. Please try again.';
+          } else if (e.toString().contains('User not found')) {
+            errorMessage = 'User not found. Please log in again.';
+          }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update profile: $e')),
+            SnackBar(content: Text(errorMessage)),
           );
         }
       },
@@ -222,6 +257,10 @@ class _EditProfileState extends ConsumerState<EditProfile> {
     return OutlinedButton.icon(
       onPressed: () {
         // Add logout functionality
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (Route<dynamic> route) => false,
+        );
       },
       icon: const Icon(Icons.logout),
       label: const Text('Log out'),

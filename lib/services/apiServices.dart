@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io'; // Add this import to resolve the 'File' class issue
 
 final apiServiceProvider = Provider((ref) => ApiService());
 
@@ -180,17 +181,69 @@ class ApiService {
   }
 
 
-  Future<Map<String, dynamic>> updateUser(int userId, Map<String, dynamic> userData) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/users/$userId'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(userData),
-    );
+  Future<Map<String, dynamic>> updateUser(int userId, Map<String, dynamic> userData, {File? profilePicture}) async {
+    var request = http.MultipartRequest('PUT', Uri.parse('$baseUrl/users/$userId'));
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to update user');
+    // Add user data fields, only if they are not null or empty
+    userData.forEach((key, value) {
+      if (value != null && value.toString().isNotEmpty) {
+        request.fields[key] = value.toString();
+      }
+    });
+
+    // Function to upload image to Imgur and get the link
+    Future<String?> uploadImageToImgur(File image) async {
+      final uri = Uri.parse('https://api.imgur.com/3/image');
+      final imgurRequest = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Client-ID 3202ea3e39b8c9b';
+      
+      final file = await http.MultipartFile.fromPath('image', image.path);
+      imgurRequest.files.add(file);
+
+      try {
+        final response = await imgurRequest.send();
+        final responseBody = await response.stream.bytesToString();
+        final jsonResponse = json.decode(responseBody);
+        
+        if (response.statusCode == 200 && jsonResponse['success'] == true) {
+          return jsonResponse['data']['link'];
+        } else {
+          print('Failed to upload image to Imgur: ${jsonResponse['data']['error']}');
+          return null;
+        }
+      } catch (e) {
+        print('Error uploading image to Imgur: $e');
+        return null;
+      }
+    }
+
+    // If profile picture is provided, upload it to Imgur first
+    if (profilePicture != null) {
+      try {
+        String? imageUrl = await uploadImageToImgur(profilePicture);
+        if (imageUrl != null) {
+          request.fields['profile_picture'] = imageUrl;
+        } else {
+          throw Exception('Failed to upload image to Imgur');
+        }
+      } catch (e) {
+        throw Exception('Error uploading image: $e');
+      }
+    }
+
+    try {
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return json.decode(responseBody);
+      } else if (response.statusCode == 404) {
+        throw Exception('User not found');
+      } else {
+        throw Exception('Failed to update user: ${response.statusCode} - $responseBody');
+      }
+    } catch (e) {
+      throw Exception('Error updating user profile: $e');
     }
   }
 }
