@@ -178,6 +178,19 @@ class ApiService {
       throw Exception('Failed to get user');
     }
   }
-  
 
+
+  Future<Map<String, dynamic>> updateUser(int userId, Map<String, dynamic> userData) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/users/$userId'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(userData),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to update user');
+    }
+  }
 }

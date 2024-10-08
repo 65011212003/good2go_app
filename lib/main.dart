@@ -121,7 +121,7 @@ class _LoginPageState extends riverpod.ConsumerState<LoginPage> {
       );
       // Handle successful login
       if (mounted) {
-        if (user['userType'] == 'rider') {
+        if (user['is_rider']) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const RiderHome()),

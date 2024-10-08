@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:good2go_app/edit_profile.dart';
 import 'package:good2go_app/sender/send_package.dart';
 
 class SenderHome extends StatefulWidget {
@@ -38,9 +39,17 @@ class _SenderHomeState extends State<SenderHome> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          CircleAvatar(
-                            backgroundColor: Colors.grey[300],
-                            child: const Icon(Icons.person_outline, color: Colors.black),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const EditProfile()),
+                              );
+                            },
+                            child: CircleAvatar(
+                              backgroundColor: Colors.grey[300],
+                              child: const Icon(Icons.person_outline, color: Colors.black),
+                            ),
                           ),
                         ],
                       ),
