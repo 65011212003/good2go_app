@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:good2go_app/services/apiServices.dart';
 
@@ -25,6 +26,7 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _addressController = TextEditingController();
+  String? _base64Image;
 
   Future getImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
@@ -32,6 +34,8 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
     setState(() {
       if (pickedFile != null) {
         _image = File(pickedFile.path);
+        // Convert image to base64
+        _base64Image = base64Encode(_image!.readAsBytesSync());
       }
     });
   }
@@ -42,12 +46,12 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
         final apiService = ref.read(apiServiceProvider);
         final userData = {
           'phone_number': _phoneController.text,
-          'name': _nameController.text,
           'password': _passwordController.text,
+          'name': _nameController.text,
+          'profile_picture': _base64Image ?? '', // Use empty string if no image selected
           'address': _addressController.text,
-          'latitude': _selectedLocation.latitude,
-          'longitude': _selectedLocation.longitude,
-          'user_type': 'user',
+          'gps_latitude': _selectedLocation.latitude,
+          'gps_longitude': _selectedLocation.longitude,
         };
         await apiService.createUser(userData);
         if (mounted) {

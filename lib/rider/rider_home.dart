@@ -1,13 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:good2go_app/services/apiServices.dart';
 
-class RiderHome extends StatefulWidget {
+class RiderHome extends ConsumerStatefulWidget {
   const RiderHome({Key? key}) : super(key: key);
 
   @override
-  State<RiderHome> createState() => _RiderHomeState();
+  ConsumerState<RiderHome> createState() => _RiderHomeState();
 }
 
-class _RiderHomeState extends State<RiderHome> {
+class _RiderHomeState extends ConsumerState<RiderHome> {
+  List<Map<String, dynamic>> availableDeliveries = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAvailableDeliveries();
+  }
+
+  Future<void> _fetchAvailableDeliveries() async {
+    final apiService = ref.read(apiServiceProvider);
+    try {
+      final deliveries = await apiService.getAvailableDeliveries();
+      setState(() {
+        availableDeliveries = deliveries;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch available deliveries: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,15 +51,16 @@ class _RiderHomeState extends State<RiderHome> {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             color: Colors.black,
             width: double.infinity,
-            child: const Text(
-              'งานที่สามารถรับได้ (3)',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+            child: Text(
+              'งานที่สามารถรับได้ (${availableDeliveries.length})',
+              style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: 3,
+              itemCount: availableDeliveries.length,
               itemBuilder: (context, index) {
+                final delivery = availableDeliveries[index];
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
@@ -53,9 +78,9 @@ class _RiderHomeState extends State<RiderHome> {
                             color: Colors.grey,
                           ),
                         ),
-                        const Text(
-                          '#16623666',
-                          style: TextStyle(
+                        Text(
+                          '#${delivery['id']}',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -63,12 +88,12 @@ class _RiderHomeState extends State<RiderHome> {
                         const SizedBox(height: 12),
                         _buildAddressRow(
                           icon: Icons.location_on,
-                          text: 'ที่อยู่ผู้ส่ง : 998 หมู่ 10\nอ.เเก้งสนามนาง อ.เเก้งสนามนาง\nจ.นครราชสีมา 525456',
+                          text: 'ที่อยู่ผู้ส่ง : ${delivery['sender_address']}',
                         ),
                         const SizedBox(height: 8),
                         _buildAddressRow(
                           icon: Icons.location_on,
-                          text: 'ที่อยู่ผู้รับ : 999 หมู่ 10\nอ.เเก้งสนามนาง อ.เเก้งสนามนาง\nจ.นครราชสีมา 525456',
+                          text: 'ที่อยู่ผู้รับ : ${delivery['receiver_address']}',
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -86,7 +111,9 @@ class _RiderHomeState extends State<RiderHome> {
                             ),
                             const SizedBox(width: 16),
                             ElevatedButton.icon(
-                              onPressed: () {},
+                              onPressed: () {
+                                // TODO: Implement accept delivery functionality
+                              },
                               icon: const Icon(Icons.check_circle_outline, size: 20),
                               label: const Text('รับ Order'),
                               style: ElevatedButton.styleFrom(

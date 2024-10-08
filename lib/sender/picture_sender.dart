@@ -60,6 +60,8 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
 
   @override
   Widget build(BuildContext context) {
+    final apiService = ref.read(apiServiceProvider);
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
@@ -193,10 +195,17 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
                         child: ElevatedButton(
                           onPressed: () async {
                             await uploadImage();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const FinishSender()),
-                            );
+                            try {
+                              await apiService.updateDeliveryStatus(widget.deliveryId, 'completed');
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const FinishSender()),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to update delivery status: $e')),
+                              );
+                            }
                           },
                           child: const Text('สร้างรายการ', style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(

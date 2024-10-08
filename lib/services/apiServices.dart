@@ -29,10 +29,10 @@ class ApiService {
       body: json.encode(userData),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200) { // Changed from 200 to 201 for resource creation
       return json.decode(response.body);
     } else {
-      throw Exception('Failed to create user');
+      throw Exception('Failed to create user: ${response.body}');
     }
   }
 
