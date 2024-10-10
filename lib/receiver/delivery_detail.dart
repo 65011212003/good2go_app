@@ -4,6 +4,7 @@ import 'package:good2go_app/sender/add_product_sender.dart';
 import 'package:good2go_app/sender/picture_sender.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:good2go_app/services/apiServices.dart';
+import 'package:good2go_app/providers/delivery_provider.dart';
 
 class DeliveryDetail extends ConsumerStatefulWidget {
   final Map<String, dynamic> receiver;
@@ -19,7 +20,9 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
     final apiService = ref.read(apiServiceProvider);
+    final deliveryState = ref.watch(deliveryProvider);
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -118,13 +121,17 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('รายการจัดส่ง (0)', style: TextStyle(fontSize: 16)),
+                          Text('รายการจัดส่ง (${deliveryState.items.length})', style: TextStyle(fontSize: 16)),
                           ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
+                            onPressed: () async {
+                              final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (context) => const AddProductSender()),
                               );
+                              if (result == true) {
+                                // Refresh the list if a new item was added
+                                setState(() {});
+                              }
                             },
                             icon: const Icon(Icons.add, color: Colors.white),
                             label: const Text('เพิ่ม', style: TextStyle(color: Colors.white)),
@@ -137,6 +144,30 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 16),
+
+                      // Display the list of added items
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: deliveryState.items.length,
+                        itemBuilder: (context, index) {
+                          final item = deliveryState.items[index];
+                          return ListTile(
+                            leading: item.itemPhoto != null
+                                ? Image.file(item.itemPhoto!, width: 50, height: 50, fit: BoxFit.cover)
+                                : Icon(Icons.image_not_supported),
+                            title: Text(item.itemName),
+                            subtitle: Text(item.itemDescription ?? ''),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () {
+                                ref.read(deliveryProvider.notifier).removeItem(index);
+                              },
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -144,46 +175,35 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
             ),
             
             // Send Button
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    try {
-                      // Create delivery using API
-                      Map<String, dynamic> deliveryData = {
-                        'receiver_id': widget.receiver['id'],
-                        // Add other necessary delivery data
-                      };
-                      await apiService.createDelivery(deliveryData);
-                      
-                      final createdDelivery = await apiService.createDelivery(deliveryData);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => PictureSender(deliveryId: createdDelivery['id'], receiver: widget.receiver)),
-                      );
-                    } catch (e) {
-                      // Handle error
-                      print('Failed to create delivery: $e');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to create delivery: ${e.toString()}')),
-                      );
-                      // Show error message to user
-                    }
-                  },
-                  icon: const Icon(Icons.send, color: Colors.white),
-                  label: const Text('ส่งสินค้า', style: TextStyle(color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xBF5300F9),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                // Start of Selection
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PictureSender(
+                              deliveryId: widget.receiver['id'],
+                              receiver: widget.receiver,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.send, color: Colors.white),
+                      label: const Text('ส่งสินค้า', style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xBF5300F9),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
             
             // Bottom Navigation
             Container(

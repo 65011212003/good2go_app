@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:good2go_app/services/apiServices.dart';
+import 'package:good2go_app/providers/delivery_provider.dart';
 
 class AddProductSender extends ConsumerStatefulWidget {
   const AddProductSender({Key? key}) : super(key: key);
@@ -14,6 +14,7 @@ class AddProductSender extends ConsumerStatefulWidget {
 class _AddProductSenderState extends ConsumerState<AddProductSender> {
   File? _image;
   final picker = ImagePicker();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _detailsController = TextEditingController();
 
   Future getImage(ImageSource source) async {
@@ -26,40 +27,27 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
     });
   }
 
-  Future<void> _addProduct() async {
-    if (_image == null) {
+  void _addProduct() {
+    if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an image')),
+        const SnackBar(content: Text('Please enter a product name')),
       );
       return;
     }
 
-    final apiService = ref.read(apiServiceProvider);
-    try {
-      // Assuming you have a method to get the current delivery ID
-      int deliveryId = 1; // Replace with actual delivery ID
-      
-      await apiService.uploadDeliveryPhoto(
-        deliveryId,
-        'product_added',
-        await _image!.readAsBytes(),
-        'product_image.jpg',
-      );
+    final deliveryNotifier = ref.read(deliveryProvider.notifier);
+    deliveryNotifier.addItem(
+      DeliveryItem(
+        itemName: _nameController.text,
+        itemDescription: _detailsController.text,
+        itemPhoto: _image,
+      ),
+    );
 
-      // Add product details if needed
-      if (_detailsController.text.isNotEmpty) {
-        await apiService.updateDeliveryStatus(deliveryId, _detailsController.text);
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product added successfully')),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add product: $e')),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Product added successfully')),
+    );
+    Navigator.pop(context);
   }
 
   @override
@@ -163,6 +151,16 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                             contentPadding: EdgeInsets.all(8),
                             border: InputBorder.none,
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Product Name
+                      TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'ชื่อสินค้า',
+                          border: OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 16),

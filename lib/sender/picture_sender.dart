@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:good2go_app/services/apiServices.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:good2go_app/providers/delivery_provider.dart';
 
 class PictureSender extends ConsumerStatefulWidget {
   final int deliveryId;
@@ -27,6 +28,7 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
     setState(() {
       if (pickedFile != null) {
         _image = File(pickedFile.path);
+        ref.read(deliveryProvider.notifier).setDeliveryPhoto(_image!);
       }
     });
   }
@@ -58,9 +60,55 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
     }
   }
 
+  Future<void> createDelivery() async {
+    if (_image == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please take a picture first')),
+      );
+      return;
+    }
+
+    final apiService = ref.read(apiServiceProvider);
+    final deliveryState = ref.read(deliveryProvider);
+
+    try {
+      // First, upload the image
+      await uploadImage();
+
+      // Then, create the delivery
+      final deliveryData = {
+        'sender_id': widget.deliveryId,
+        'receiver_id': widget.receiver['id'],
+        'status': 'waiting_for_rider', // Set the initial status
+        'items': deliveryState.items.map((item) => {
+          'name': item.itemName,
+          'description': item.itemDescription,
+        }).toList(),
+        // Add any other necessary fields for creating a delivery
+      };
+
+      final createdDelivery = await apiService.createDelivery(deliveryData);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Delivery created successfully')),
+      );
+
+      // Navigate to the FinishSender screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const FinishSender()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create delivery: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final apiService = ref.read(apiServiceProvider);
+    final deliveryState = ref.watch(deliveryProvider);
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -173,9 +221,9 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
                       // Delivery Image
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: _image != null
+                        child: deliveryState.deliveryPhoto != null
                             ? Image.file(
-                                _image!,
+                                deliveryState.deliveryPhoto!,
                                 height: 200,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
@@ -193,20 +241,7 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () async {
-                            await uploadImage();
-                            try {
-                              await apiService.updateDeliveryStatus(widget.deliveryId, 'completed');
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const FinishSender()),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Failed to update delivery status: $e')),
-                              );
-                            }
-                          },
+                          onPressed: createDelivery,
                           child: const Text('สร้างรายการ', style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xBF5300F9),

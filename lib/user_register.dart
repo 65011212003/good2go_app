@@ -48,7 +48,8 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
           'phone_number': _phoneController.text,
           'password': _passwordController.text,
           'name': _nameController.text,
-          'profile_picture': _base64Image ?? '', // Use empty string if no image selected
+          'profile_picture':
+              _base64Image ?? '', // Use empty string if no image selected
           'address': _addressController.text,
           'gps_latitude': _selectedLocation.latitude,
           'gps_longitude': _selectedLocation.longitude,
@@ -86,7 +87,8 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
           child: SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+                minHeight: MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.top,
               ),
               child: IntrinsicHeight(
                 child: Padding(
@@ -125,11 +127,16 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
                                 ),
                                 const SizedBox(height: 20),
                                 _buildProfileImagePicker(),
-                                _buildTextField('เบอร์โทรศัพท์', _phoneController),
+                                _buildTextField(
+                                    'เบอร์โทรศัพท์', _phoneController),
                                 _buildTextField('ชื่อ - สกุล', _nameController),
-                                _buildTextField('รหัสผ่าน', _passwordController, isPassword: true),
-                                _buildTextField('ยืนยันรหัสผ่าน', _confirmPasswordController, isPassword: true),
-                                _buildTextField('ที่อยู่', _addressController, maxLines: 3),
+                                _buildTextField('รหัสผ่าน', _passwordController,
+                                    isPassword: true),
+                                _buildTextField('ยืนยันรหัสผ่าน',
+                                    _confirmPasswordController,
+                                    isPassword: true),
+                                _buildTextField('ที่อยู่', _addressController,
+                                    maxLines: 3),
                                 _buildLocationMap(),
                                 const Spacer(),
                                 ElevatedButton(
@@ -137,7 +144,8 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white,
                                     backgroundColor: const Color(0xFF5300F9),
-                                    minimumSize: const Size(double.infinity, 50),
+                                    minimumSize:
+                                        const Size(double.infinity, 50),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -153,7 +161,8 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                            MaterialPageRoute(
+                                builder: (context) => const LoginPage()),
                           );
                         },
                         child: const Text(
@@ -206,7 +215,8 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false, int maxLines = 1}) {
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool isPassword = false, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: TextFormField(
@@ -218,7 +228,8 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -248,7 +259,8 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 subdomains: ['a', 'b', 'c'],
               ),
               MarkerLayer(
@@ -274,10 +286,10 @@ class _UserRegisterState extends ConsumerState<UserRegister> {
               onPressed: () async {
                 try {
                   Position position = await Geolocator.getCurrentPosition(
-                    desiredAccuracy: LocationAccuracy.high
-                  );
+                      desiredAccuracy: LocationAccuracy.high);
                   setState(() {
-                    _selectedLocation = LatLng(position.latitude, position.longitude);
+                    _selectedLocation =
+                        LatLng(position.latitude, position.longitude);
                   });
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(

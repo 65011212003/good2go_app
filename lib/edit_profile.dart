@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:good2go_app/main.dart';
+import 'package:good2go_app/providers/delivery_provider.dart';
 import 'package:good2go_app/services/apiServices.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -113,7 +114,28 @@ class _EditProfileState extends ConsumerState<EditProfile> {
                               borderRadius: BorderRadius.circular(16),
                               child: Image.file(_image!, fit: BoxFit.cover),
                             )
-                          : const Icon(Icons.person, size: 80, color: Colors.black54),
+                          : _userData!['profile_picture'] != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Image.network(
+                                    _userData!['profile_picture'],
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Center(
+                                        child: CircularProgressIndicator(
+                                          value: loadingProgress.expectedTotalBytes != null
+                                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                              : null,
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(Icons.person, size: 80, color: Colors.black54);
+                                    },
+                                  ),
+                                )
+                              : const Icon(Icons.person, size: 80, color: Colors.black54),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -256,7 +278,14 @@ class _EditProfileState extends ConsumerState<EditProfile> {
   Widget _buildLogoutButton() {
     return OutlinedButton.icon(
       onPressed: () {
-        // Add logout functionality
+        // Reset providers
+        ref.read(deliveryProvider.notifier).clearItems();
+        // Add more provider resets here if needed
+
+        // Perform logout
+        // You may want to call a logout method from your auth service here
+
+        // Navigate to login page
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const LoginPage()),
           (Route<dynamic> route) => false,
