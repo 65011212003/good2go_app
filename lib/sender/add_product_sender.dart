@@ -1,57 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/providers/delivery_provider.dart';
 
-class AddProductSender extends ConsumerStatefulWidget {
-  const AddProductSender({Key? key}) : super(key: key);
-
-  @override
-  ConsumerState<AddProductSender> createState() => _AddProductSenderState();
-}
-
-class _AddProductSenderState extends ConsumerState<AddProductSender> {
-  File? _image;
+class AddProductSenderController extends GetxController {
   final picker = ImagePicker();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _detailsController = TextEditingController();
+  final nameController = TextEditingController();
+  final detailsController = TextEditingController();
+  final Rx<File?> image = Rx<File?>(null);
 
   Future getImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
-
-    setState(() {
-      if (pickedFile != null) {
-        _image = File(pickedFile.path);
-      }
-    });
+    if (pickedFile != null) {
+      image.value = File(pickedFile.path);
+    }
   }
 
-  void _addProduct() {
-    if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a product name')),
-      );
+  void addProduct() {
+    if (nameController.text.isEmpty) {
+      Get.snackbar('Error', 'Please enter a product name');
       return;
     }
 
-    final deliveryNotifier = ref.read(deliveryProvider.notifier);
-    deliveryNotifier.addItem(
+    final deliveryProvider = Get.find<DeliveryNotifier>();
+    deliveryProvider.addItem(
       DeliveryItem(
-        itemName: _nameController.text,
-        itemDescription: _detailsController.text,
-        itemPhoto: _image,
+        itemName: nameController.text,
+        itemDescription: detailsController.text,
+        itemPhoto: image.value,
       ),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Product added successfully')),
-    );
-    Navigator.pop(context);
+    Get.snackbar('Success', 'Product added successfully');
+    Get.back();
   }
+}
+
+class AddProductSender extends GetView<AddProductSenderController> {
+  const AddProductSender({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(AddProductSenderController());
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -64,7 +56,7 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Get.back(),
                   ),
                   const Text(
                     'สินค้าของคุณ',
@@ -87,7 +79,7 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => getImage(ImageSource.gallery),
+                              onPressed: () => controller.getImage(ImageSource.gallery),
                               icon: const Icon(Icons.image, color: Colors.white),
                               label: const Text('เลือกรูป', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
@@ -101,7 +93,7 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => getImage(ImageSource.camera),
+                              onPressed: () => controller.getImage(ImageSource.camera),
                               icon: const Icon(Icons.camera_alt, color: Colors.white),
                               label: const Text('ถ่ายรูป', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
@@ -118,9 +110,9 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                       
                       // Product Image
                       Center(
-                        child: _image != null
+                        child: Obx(() => controller.image.value != null
                             ? Image.file(
-                                _image!,
+                                controller.image.value!,
                                 height: 200,
                                 fit: BoxFit.contain,
                               )
@@ -129,6 +121,7 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                                 height: 200,
                                 fit: BoxFit.contain,
                               ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       
@@ -145,7 +138,7 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: TextField(
-                          controller: _detailsController,
+                          controller: controller.detailsController,
                           maxLines: null,
                           decoration: const InputDecoration(
                             contentPadding: EdgeInsets.all(8),
@@ -157,7 +150,7 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                       
                       // Product Name
                       TextField(
-                        controller: _nameController,
+                        controller: controller.nameController,
                         decoration: const InputDecoration(
                           labelText: 'ชื่อสินค้า',
                           border: OutlineInputBorder(),
@@ -170,7 +163,7 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () => Get.back(),
                               child: const Text('ยกเลิก', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
@@ -183,7 +176,7 @@ class _AddProductSenderState extends ConsumerState<AddProductSender> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: _addProduct,
+                              onPressed: controller.addProduct,
                               child: const Text('เพิ่ม', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,

@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:get/get.dart';
 
-class RiderSendState extends StatefulWidget {
-  const RiderSendState({super.key});
+class RiderSendStateController extends GetxController {
+  final MapController mapController = MapController();
 
-  @override
-  State<RiderSendState> createState() => _RiderSendStateState();
+  void moveToCurrentLocation() {
+    mapController.move(const LatLng(37.7749, -122.4194), 15.0);
+  }
 }
 
-class _RiderSendStateState extends State<RiderSendState> {
-  final MapController _mapController = MapController();
+class RiderSendState extends GetView<RiderSendStateController> {
+  const RiderSendState({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(RiderSendStateController());
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Get.back(),
         ),
         title: const Text(
           'Tracking ID #16623666',
@@ -36,7 +40,7 @@ class _RiderSendStateState extends State<RiderSendState> {
               child: Stack(
                 children: [
                   FlutterMap(
-                    mapController: _mapController,
+                    mapController: controller.mapController,
                     options: const MapOptions(
                       initialCenter: LatLng(37.7749, -122.4194), // San Francisco coordinates
                       initialZoom: 12.0,
@@ -66,9 +70,7 @@ class _RiderSendStateState extends State<RiderSendState> {
                     right: 16,
                     bottom: 16,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        _mapController.move(const LatLng(37.7749, -122.4194), 15.0);
-                      },
+                      onPressed: controller.moveToCurrentLocation,
                       icon: const Icon(Icons.gps_fixed, size: 18),
                       label: const Text('GPS'),
                       style: ElevatedButton.styleFrom(

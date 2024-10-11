@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:good2go_app/rider/rider_home.dart';
-// ignore: unused_import
 import 'package:good2go_app/sender/sender_home.dart';
 import 'package:good2go_app/register_chose.dart';
 import 'package:good2go_app/services/apiServices.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:provider/provider.dart' as provider;
+import 'package:get/get.dart';
 
 void main() {
   runApp(
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Good2Go',
       theme: ThemeData(
         useMaterial3: true,
@@ -50,11 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
-      }
+      Get.off(() => const LoginPage());
     });
   }
 
@@ -88,64 +84,48 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-class LoginPage extends riverpod.ConsumerStatefulWidget {
+class LoginController extends GetxController {
+  final phoneController = TextEditingController();
+  final passwordController = TextEditingController();
+  final isLoading = false.obs;
+  final errorMessage = RxnString();
+
+  @override
+  void onClose() {
+    phoneController.dispose();
+    passwordController.dispose();
+    super.onClose();
+  }
+
+  Future<void> login() async {
+    isLoading.value = true;
+    errorMessage.value = null;
+    try {
+      final apiService = Get.find<ApiService>();
+      final user = await apiService.login(
+        phoneController.text,
+        passwordController.text,
+      );
+      if (user['is_rider']) {
+        Get.off(() => const RiderHome());
+      } else {
+        Get.off(() => const SenderHome());
+      }
+    } catch (e) {
+      errorMessage.value = 'An error occurred. Please try again.';
+    } finally {
+      isLoading.value = false;
+    }
+  }
+}
+
+class LoginPage extends GetView<LoginController> {
   const LoginPage({super.key});
 
   @override
-  riverpod.ConsumerState<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends riverpod.ConsumerState<LoginPage> {
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMessage;
-
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _login() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final apiService = ref.read(apiServiceProvider);
-      final user = await apiService.login(
-        _phoneController.text,
-        _passwordController.text,
-      );
-      // Handle successful login
-      if (mounted) {
-        if (user['is_rider']) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const RiderHome()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const SenderHome()),
-          );
-        }
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An error occurred. Please try again.';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final controller = Get.put(LoginController());
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -183,7 +163,7 @@ class _LoginPageState extends riverpod.ConsumerState<LoginPage> {
                   child: Column(
                     children: [
                       TextField(
-                        controller: _phoneController,
+                        controller: controller.phoneController,
                         decoration: const InputDecoration(
                           labelText: 'เบอร์โทรศัพท์',
                           border: OutlineInputBorder(),
@@ -193,7 +173,7 @@ class _LoginPageState extends riverpod.ConsumerState<LoginPage> {
                       ),
                       const SizedBox(height: 20),
                       TextField(
-                        controller: _passwordController,
+                        controller: controller.passwordController,
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'รหัสผ่าน',
@@ -202,10 +182,10 @@ class _LoginPageState extends riverpod.ConsumerState<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      _isLoading
+                      Obx(() => controller.isLoading.value
                           ? const CircularProgressIndicator()
                           : ElevatedButton(
-                              onPressed: _login,
+                              onPressed: controller.login,
                               style: ElevatedButton.styleFrom(
                                 foregroundColor: Colors.white,
                                 backgroundColor: const Color(0xFF5300F9),
@@ -215,24 +195,20 @@ class _LoginPageState extends riverpod.ConsumerState<LoginPage> {
                                 'เข้าสู่ระบบ',
                                 style: TextStyle(fontFamily: 'Roboto'),
                               ),
-                            ),
+                            )),
                       const SizedBox(height: 10),
-                      if (_errorMessage != null)
-                        Text(
-                          _errorMessage!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontFamily: 'Roboto',
-                          ),
-                        ),
+                      Obx(() => controller.errorMessage.value != null
+                          ? Text(
+                              controller.errorMessage.value!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontFamily: 'Roboto',
+                              ),
+                            )
+                          : const SizedBox.shrink()),
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const RegisterSelectPage()),
-                          );
+                          Get.to(() => const RegisterSelectPage());
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF5300F9),

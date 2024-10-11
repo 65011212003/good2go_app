@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/main.dart';
 import 'package:good2go_app/rider_register.dart';
 import 'package:good2go_app/user_register.dart';
 
-class RegisterSelectPage extends StatefulWidget {
+class RegisterSelectPage extends StatelessWidget {
   const RegisterSelectPage({Key? key}) : super(key: key);
 
-  @override
-  State<RegisterSelectPage> createState() => _RegisterSelectPageState();
-}
-
-class _RegisterSelectPageState extends State<RegisterSelectPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,26 +51,12 @@ class _RegisterSelectPageState extends State<RegisterSelectPage> {
                           _buildOptionCard(
                             icon: Icons.delivery_dining,
                             label: 'โรเดอร์',
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const RiderRegister()),
-                              );
-                            },
+                            onTap: () => Get.to(() => const RiderRegister()),
                           ),
                           _buildOptionCard(
                             icon: Icons.group,
                             label: 'ผู้ใช้ทั่วไป',
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const UserRegister()),
-                              );
-                            },
+                            onTap: () => Get.to(() => const UserRegister()),
                           ),
                         ],
                       ),
@@ -95,13 +77,7 @@ class _RegisterSelectPageState extends State<RegisterSelectPage> {
                 ),
                 const SizedBox(height: 20),
                 TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginPage()),
-                    );
-                  },
+                  onPressed: () => Get.to(() => const LoginPage()),
                   child: const Text(
                     'เข้าสู่ระบบ',
                     style: TextStyle(color: Colors.white),

@@ -44,6 +44,7 @@ dependencies:
   geolocator: ^13.0.1
   image_picker: ^1.1.2
   riverpod: ^2.5.1
+  get: ^4.6.6
 
 dev_dependencies:
   flutter_test:

@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/sender/send_package.dart';
 
-class FinishSender extends StatefulWidget {
-  const FinishSender({Key? key}) : super(key: key);
+class FinishSenderController extends GetxController {
+  final int deliveryId;
 
-  @override
-  State<FinishSender> createState() => _FinishSenderState();
+  FinishSenderController({required this.deliveryId});
+
+  void onConfirmPressed() {
+    Get.off(() => const SendPackage());
+  }
 }
 
-class _FinishSenderState extends State<FinishSender> {
+class FinishSender extends GetView<FinishSenderController> {
+  const FinishSender({Key? key, required int deliveryId}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    Get.put(FinishSenderController(deliveryId: Get.arguments['deliveryId']));
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -23,7 +31,7 @@ class _FinishSenderState extends State<FinishSender> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Get.back(),
                   ),
                   const Text(
                     'ข้อมูลการจัดส่งสินค้า',
@@ -123,12 +131,7 @@ class _FinishSenderState extends State<FinishSender> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const SendPackage()),
-                            );
-                          },
+                          onPressed: controller.onConfirmPressed,
                           child: const Text('ตกลง', style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF5300F9),

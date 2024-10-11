@@ -2,27 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:easy_stepper/easy_stepper.dart';
 import 'package:good2go_app/sender/add_product_sender.dart';
 import 'package:good2go_app/sender/picture_sender.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/services/apiServices.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:good2go_app/providers/delivery_provider.dart';
 
-class DeliveryDetail extends ConsumerStatefulWidget {
+class DeliveryDetail extends ConsumerWidget {
   final Map<String, dynamic> receiver;
 
-  const DeliveryDetail({Key? key, required this.receiver}) : super(key: key);
+  DeliveryDetail({Key? key, required this.receiver}) : super(key: key);
 
   @override
-  ConsumerState<DeliveryDetail> createState() => _DeliveryDetailState();
-}
-
-class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
-  int activeStep = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    // ignore: unused_local_variable
-    final apiService = ref.read(apiServiceProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final apiService = Get.find<ApiService>();
     final deliveryState = ref.watch(deliveryProvider);
+    final deliveryNotifier = ref.read(deliveryProvider.notifier);
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -36,7 +30,7 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Get.back(),
                   ),
                   const Text(
                     'ข้อมูลการจัดส่งสินค้า',
@@ -73,10 +67,10 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(widget.receiver['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    Text(receiver['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
                                     const Text('ที่อยู่รับ :'),
-                                    Text(widget.receiver['address']),
-                                    Text('โทรศัพท์ : ${widget.receiver['phone_number']}'),
+                                    Text(receiver['address']),
+                                    Text('โทรศัพท์ : ${receiver['phone_number']}'),
                                   ],
                                 ),
                               ),
@@ -88,7 +82,7 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                       
                       // Status Icons using EasyStepper
                       EasyStepper(
-                        activeStep: activeStep,
+                        activeStep: 0,
                         stepShape: StepShape.circle,
                         stepBorderRadius: 15,
                         borderThickness: 2,
@@ -113,7 +107,7 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                             title: 'ส่งเสร็จ',
                           ),
                         ],
-                        onStepReached: (index) => setState(() => activeStep = index),
+                        onStepReached: (index) {},
                       ),
                       const SizedBox(height: 24),
                       
@@ -124,13 +118,10 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                           Text('รายการจัดส่ง (${deliveryState.items.length})', style: TextStyle(fontSize: 16)),
                           ElevatedButton.icon(
                             onPressed: () async {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const AddProductSender()),
-                              );
+                              final result = await Get.to(() => const AddProductSender());
                               if (result == true) {
                                 // Refresh the list if a new item was added
-                                setState(() {});
+                                ref.refresh(deliveryProvider);
                               }
                             },
                             icon: const Icon(Icons.add, color: Colors.white),
@@ -161,9 +152,7 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
                             subtitle: Text(item.itemDescription ?? ''),
                             trailing: IconButton(
                               icon: Icon(Icons.delete),
-                              onPressed: () {
-                                ref.read(deliveryProvider.notifier).removeItem(index);
-                              },
+                              onPressed: () => deliveryNotifier.removeItem(index),
                             ),
                           );
                         },
@@ -175,35 +164,26 @@ class _DeliveryDetailState extends ConsumerState<DeliveryDetail> {
             ),
             
             // Send Button
-                // Start of Selection
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PictureSender(
-                              deliveryId: widget.receiver['id'],
-                              receiver: widget.receiver,
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.send, color: Colors.white),
-                      label: const Text('ส่งสินค้า', style: TextStyle(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xBF5300F9),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Get.to(() => PictureSender());
+                  },
+                  icon: const Icon(Icons.send, color: Colors.white),
+                  label: const Text('ส่งสินค้า', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xBF5300F9),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
+              ),
+            ),
             
             // Bottom Navigation
             Container(

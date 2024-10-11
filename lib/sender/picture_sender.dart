@@ -1,115 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:easy_stepper/easy_stepper.dart';
 import 'package:good2go_app/sender/finish_sender.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/services/apiServices.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:good2go_app/providers/delivery_provider.dart';
 
-class PictureSender extends ConsumerStatefulWidget {
+class PictureSenderController extends GetxController {
   final int deliveryId;
   final Map<String, dynamic> receiver;
-
-  const PictureSender({Key? key, required this.deliveryId, required this.receiver}) : super(key: key);
-
-  @override
-  ConsumerState<PictureSender> createState() => _PictureSenderState();
-}
-
-class _PictureSenderState extends ConsumerState<PictureSender> {
-  int activeStep = 1;
-  File? _image;
+  final RxInt activeStep = 1.obs;
+  final Rx<File?> deliveryPhoto = Rx<File?>(null);
   final picker = ImagePicker();
+
+  PictureSenderController({required this.deliveryId, required this.receiver});
 
   Future getImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
-
-    setState(() {
-      if (pickedFile != null) {
-        _image = File(pickedFile.path);
-        ref.read(deliveryProvider.notifier).setDeliveryPhoto(_image!);
-      }
-    });
-  }
-
-  Future<void> uploadImage() async {
-    if (_image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please take a picture first')),
-      );
-      return;
-    }
-
-    final apiService = ref.read(apiServiceProvider);
-    try {
-      await apiService.uploadDeliveryPhoto(
-        widget.deliveryId,
-        'product_photo',
-        await _image!.readAsBytes(),
-        'product_image.jpg',
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image uploaded successfully')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to upload image: $e')),
-      );
+    if (pickedFile != null) {
+      deliveryPhoto.value = File(pickedFile.path);
     }
   }
 
   Future<void> createDelivery() async {
-    if (_image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please take a picture first')),
-      );
+    if (deliveryPhoto.value == null) {
+      Get.snackbar('Error', 'Please take a picture first');
       return;
     }
 
-    final apiService = ref.read(apiServiceProvider);
-    final deliveryState = ref.read(deliveryProvider);
-
     try {
-      // First, upload the image
-      await uploadImage();
-
-      // Then, create the delivery
-      final deliveryData = {
-        'sender_id': widget.deliveryId,
-        'receiver_id': widget.receiver['id'],
-        'status': 'waiting_for_rider', // Set the initial status
-        'items': deliveryState.items.map((item) => {
-          'name': item.itemName,
-          'description': item.itemDescription,
-        }).toList(),
-        // Add any other necessary fields for creating a delivery
-      };
-
-      final createdDelivery = await apiService.createDelivery(deliveryData);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Delivery created successfully')),
-      );
-
-      // Navigate to the FinishSender screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const FinishSender()),
-      );
+      final apiService = Get.find<ApiService>();
+      Get.to(() => FinishSender(deliveryId: deliveryId));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create delivery: $e')),
-      );
+      Get.snackbar('Error', 'Failed to create delivery: $e');
     }
   }
+}
+
+class PictureSender extends GetView<PictureSenderController> {
+  const PictureSender({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final apiService = ref.read(apiServiceProvider);
-    final deliveryState = ref.watch(deliveryProvider);
-
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
@@ -122,7 +54,7 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Get.back(),
                   ),
                   const Text(
                     'ข้อมูลการจัดส่งสินค้า',
@@ -159,10 +91,10 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(widget.receiver['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    Text(controller.receiver['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
                                     const Text('ที่อยู่รับ :'),
-                                    Text(widget.receiver['address']),
-                                    Text('โทรศัพท์ : ${widget.receiver['phone_number']}'),
+                                    Text(controller.receiver['address']),
+                                    Text('โทรศัพท์ : ${controller.receiver['phone_number']}'),
                                   ],
                                 ),
                               ),
@@ -173,8 +105,8 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
                       const SizedBox(height: 24),
                       
                       // Status Icons using EasyStepper
-                      EasyStepper(
-                        activeStep: activeStep,
+                      Obx(() => EasyStepper(
+                        activeStep: controller.activeStep.value,
                         stepShape: StepShape.circle,
                         stepBorderRadius: 15,
                         borderThickness: 2,
@@ -199,13 +131,13 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
                             title: 'ส่งเสร็จ',
                           ),
                         ],
-                        onStepReached: (index) => setState(() => activeStep = index),
-                      ),
+                        onStepReached: (index) => controller.activeStep.value = index,
+                      )),
                       const SizedBox(height: 24),
                       
                       // Take Picture Button
                       ElevatedButton.icon(
-                        onPressed: getImage,
+                        onPressed: controller.getImage,
                         icon: const Icon(Icons.camera_alt, color: Colors.white),
                         label: const Text('ถ่ายใหม่อีกครั้ง', style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
@@ -219,29 +151,29 @@ class _PictureSenderState extends ConsumerState<PictureSender> {
                       const SizedBox(height: 24),
                       
                       // Delivery Image
-                      ClipRRect(
+                      Obx(() => ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: deliveryState.deliveryPhoto != null
+                        child: controller.deliveryPhoto.value != null
                             ? Image.file(
-                                deliveryState.deliveryPhoto!,
+                                controller.deliveryPhoto.value!,
                                 height: 200,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                               )
                             : Image.network(
-                                'https://as1.ftcdn.net/v2/jpg/01/11/51/72/1000_F_111517271_ZPicjRen9mvIhf1BdwW3BIrLBabuLQKl.jpg',
+                                'https://cdn.pixabay.com/photo/2017/11/10/05/24/add-2935429_960_720.png',
                                 height: 200,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                               ),
-                      ),
+                      )),
                       const SizedBox(height: 24),
                       
                       // Create List Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: createDelivery,
+                          onPressed: controller.createDelivery,
                           child: const Text('สร้างรายการ', style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xBF5300F9),

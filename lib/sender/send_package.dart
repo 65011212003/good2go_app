@@ -1,38 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/sender/select_receiver.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class SendPackage extends StatefulWidget {
-  const SendPackage({Key? key}) : super(key: key);
-
-  @override
-  State<SendPackage> createState() => _SendPackageState();
-}
-
-class _SendPackageState extends State<SendPackage> {
+class SendPackageController extends GetxController {
   static const Color primaryColor = Color(0xBF5300F9);
-  List<Map<String, dynamic>> packages = [];
+  RxList<Map<String, dynamic>> packages = <Map<String, dynamic>>[].obs;
 
   @override
-  void initState() {
-    super.initState();
+  void onInit() {
+    super.onInit();
     fetchPackages();
   }
 
   Future<void> fetchPackages() async {
-    final response = await http.get(Uri.parse('YOUR_API_ENDPOINT_HERE'));
-    if (response.statusCode == 200) {
-      setState(() {
-        packages = List<Map<String, dynamic>>.from(json.decode(response.body));
-      });
-    } else {
-      throw Exception('Failed to load packages');
+    try {
+      final response = await http.get(Uri.parse('YOUR_API_ENDPOINT_HERE'));
+      if (response.statusCode == 200) {
+        packages.value = List<Map<String, dynamic>>.from(json.decode(response.body));
+      } else {
+        throw Exception('Failed to load packages');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load packages: $e');
     }
   }
+}
+
+class SendPackage extends GetView<SendPackageController> {
+  const SendPackage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    Get.put(SendPackageController());
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -44,27 +46,20 @@ class _SendPackageState extends State<SendPackage> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: () => Get.back(),
                   ),
                   Expanded(
-                    child: Text(
-                      'รายการจัดส่งสินค้าทั้งหมด (${packages.length})',
+                    child: Obx(() => Text(
+                      'รายการจัดส่งสินค้าทั้งหมด (${controller.packages.length})',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: primaryColor,
+                        color: SendPackageController.primaryColor,
                       ),
-                    ),
+                    )),
                   ),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SelectReceiver()),
-                      );
-                    },
+                    onPressed: () => Get.to(() => const SelectReceiver()),
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('เพิ่มรายการ'),
                     style: ElevatedButton.styleFrom(
@@ -81,13 +76,13 @@ class _SendPackageState extends State<SendPackage> {
             
             // Main Content
             Expanded(
-              child: ListView.builder(
+              child: Obx(() => ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: packages.length,
+                itemCount: controller.packages.length,
                 itemBuilder: (context, index) {
-                  return buildCard(packages[index]);
+                  return buildCard(controller.packages[index]);
                 },
-              ),
+              )),
             ),
             
             // Bottom Navigation

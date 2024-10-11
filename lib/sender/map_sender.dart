@@ -2,21 +2,20 @@
  import 'package:flutter_map/flutter_map.dart';
  import 'package:latlong2/latlong.dart' as latlong;
  import 'package:timeline_tile/timeline_tile.dart';
+ import 'package:get/get.dart';
  
- class MapSender extends StatefulWidget {
+ class MapSenderController extends GetxController {
+   final MapController mapController = MapController();
+   final latlong.LatLng center = latlong.LatLng(37.7749, -122.4194); // San Francisco coordinates
+ }
+ 
+ class MapSender extends GetView<MapSenderController> {
    const MapSender({Key? key}) : super(key: key);
  
    @override
-   State<MapSender> createState() => _MapSenderState();
- }
- 
- class _MapSenderState extends State<MapSender> {
-   final MapController mapController = MapController();
- 
-   final latlong.LatLng _center = latlong.LatLng(37.7749, -122.4194); // San Francisco coordinates
- 
-   @override
    Widget build(BuildContext context) {
+     final controller = Get.put(MapSenderController());
+ 
      return Scaffold(
        backgroundColor: Colors.white,
        body: SafeArea(
@@ -29,7 +28,7 @@
                  children: [
                    IconButton(
                      icon: const Icon(Icons.arrow_back, color: Colors.black),
-                     onPressed: () => Navigator.pop(context),
+                     onPressed: () => Get.back(),
                    ),
                    const Text(
                      'ข้อมูลการจัดส่งสินค้า',
@@ -75,9 +74,9 @@
                          ),
                          clipBehavior: Clip.antiAlias,
                          child: FlutterMap(
-                           mapController: mapController,
+                           mapController: controller.mapController,
                            options: MapOptions(
-                             initialCenter: _center,
+                             initialCenter: controller.center,
                              initialZoom: 11.0,
                            ),
                            children: [

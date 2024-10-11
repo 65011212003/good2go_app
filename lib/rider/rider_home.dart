@@ -1,36 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/services/apiServices.dart';
 
-class RiderHome extends ConsumerStatefulWidget {
-  const RiderHome({Key? key}) : super(key: key);
+class RiderHomeController extends GetxController {
+  final ApiService apiService = Get.find<ApiService>();
+  RxList<Map<String, dynamic>> availableDeliveries = <Map<String, dynamic>>[].obs;
 
   @override
-  ConsumerState<RiderHome> createState() => _RiderHomeState();
-}
-
-class _RiderHomeState extends ConsumerState<RiderHome> {
-  List<Map<String, dynamic>> availableDeliveries = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchAvailableDeliveries();
+  void onInit() {
+    super.onInit();
+    fetchAvailableDeliveries();
   }
 
-  Future<void> _fetchAvailableDeliveries() async {
-    final apiService = ref.read(apiServiceProvider);
+  Future<void> fetchAvailableDeliveries() async {
     try {
       final deliveries = await apiService.getAvailableDeliveries();
-      setState(() {
-        availableDeliveries = deliveries;
-      });
+      availableDeliveries.assignAll(deliveries);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch available deliveries: $e')),
-      );
+      Get.snackbar('Error', 'Failed to fetch available deliveries: $e');
     }
   }
+}
+
+class RiderHome extends GetView<RiderHomeController> {
+  const RiderHome({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +33,7 @@ class _RiderHomeState extends ConsumerState<RiderHome> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: () => Get.back(),
         ),
       ),
       body: Column(
@@ -51,16 +42,16 @@ class _RiderHomeState extends ConsumerState<RiderHome> {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             color: Colors.black,
             width: double.infinity,
-            child: Text(
-              'งานที่สามารถรับได้ (${availableDeliveries.length})',
+            child: Obx(() => Text(
+              'งานที่สามารถรับได้ (${controller.availableDeliveries.length})',
               style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
+            )),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: availableDeliveries.length,
+            child: Obx(() => ListView.builder(
+              itemCount: controller.availableDeliveries.length,
               itemBuilder: (context, index) {
-                final delivery = availableDeliveries[index];
+                final delivery = controller.availableDeliveries[index];
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
@@ -131,7 +122,7 @@ class _RiderHomeState extends ConsumerState<RiderHome> {
                   ),
                 );
               },
-            ),
+            )),
           ),
         ],
       ),

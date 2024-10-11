@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-class ReceivePackage extends StatelessWidget {
+class ReceivePackageController extends GetxController {
+  final RxInt packageCount = 0.obs;
+}
+
+class ReceivePackage extends GetView<ReceivePackageController> {
   const ReceivePackage({Key? key}) : super(key: key);
 
   @override
@@ -9,16 +14,16 @@ class ReceivePackage extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Get.back(),
         ),
-        title: const Text(
-          'รายการที่ต้องรับทั้งหมด (0)',
-          style: TextStyle(
+        title: Obx(() => Text(
+          'รายการที่ต้องรับทั้งหมด (${controller.packageCount})',
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
-        ),
+        )),
         backgroundColor: Colors.white,
         elevation: 0,
       ),

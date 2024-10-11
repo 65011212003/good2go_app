@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/edit_profile.dart';
 import 'package:good2go_app/sender/send_package.dart';
 
-class SenderHome extends StatefulWidget {
-  const SenderHome({super.key});
-
-  @override
-  State<SenderHome> createState() => _SenderHomeState();
+class SenderHomeController extends GetxController {
+  // Add any necessary controller logic here
 }
 
-class _SenderHomeState extends State<SenderHome> {
+class SenderHome extends GetView<SenderHomeController> {
+  const SenderHome({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    Get.put(SenderHomeController());
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       body: SafeArea(
@@ -40,12 +42,7 @@ class _SenderHomeState extends State<SenderHome> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const EditProfile()),
-                              );
-                            },
+                            onTap: () => Get.to(() => const EditProfile()),
                             child: CircleAvatar(
                               backgroundColor: Colors.grey[300],
                               child: const Icon(Icons.person_outline, color: Colors.black),
@@ -147,12 +144,7 @@ class _SenderHomeState extends State<SenderHome> {
                       child: Row(
                         children: [
                           ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const SendPackage()),
-                              );
-                            },
+                            onPressed: () => Get.to(() => const SendPackage()),
                             icon: const Icon(Icons.list_alt, color: Colors.white),
                             label: const Text('ส่งสินค้า', style: TextStyle(color: Colors.white)),
                             style: ElevatedButton.styleFrom(

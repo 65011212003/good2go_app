@@ -1,65 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:good2go_app/services/apiServices.dart';
 
-class RiderRegister extends ConsumerStatefulWidget {
-  const RiderRegister({super.key});
+class RiderRegisterController extends GetxController {
+  final formKey = GlobalKey<FormState>();
+  final phoneController = TextEditingController();
+  final nameController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  final addressController = TextEditingController();
+  final vehicleRegistrationController = TextEditingController();
+
+  final ApiService apiService = Get.find<ApiService>();
 
   @override
-  ConsumerState<RiderRegister> createState() => _RiderRegisterState();
-}
-
-class _RiderRegisterState extends ConsumerState<RiderRegister> {
-  final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _vehicleRegistrationController = TextEditingController();
-
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    _nameController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _addressController.dispose();
-    _vehicleRegistrationController.dispose();
-    super.dispose();
+  void onClose() {
+    phoneController.dispose();
+    nameController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    addressController.dispose();
+    vehicleRegistrationController.dispose();
+    super.onClose();
   }
 
-  Future<void> _register() async {
-    if (_formKey.currentState!.validate()) {
+  Future<void> register() async {
+    if (formKey.currentState!.validate()) {
       try {
-        final apiService = ref.read(apiServiceProvider);
         final userData = {
-          'phone_number': _phoneController.text,
-          'name': _nameController.text,
-          'password': _passwordController.text,
-          'address': _addressController.text,
-          'vehicle_registration': _vehicleRegistrationController.text,
+          'phone_number': phoneController.text,
+          'name': nameController.text,
+          'password': passwordController.text,
+          'address': addressController.text,
+          'vehicle_registration': vehicleRegistrationController.text,
           'user_type': 'rider',
         };
         await apiService.createUser(userData);
-        // Handle successful registration
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ลงทะเบียนสำเร็จ')),
-          );
-          Navigator.pop(context);
-        }
+        Get.snackbar('สำเร็จ', 'ลงทะเบียนสำเร็จ');
+        Get.back();
       } catch (e) {
-        // Handle registration error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เกิดข้อผิดพลาด: ${e.toString()}')),
-        );
+        Get.snackbar('ข้อผิดพลาด', 'เกิดข้อผิดพลาด: ${e.toString()}');
       }
     }
   }
+}
+
+class RiderRegister extends GetView<RiderRegisterController> {
+  const RiderRegister({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    Get.put(RiderRegisterController());
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -76,7 +68,7 @@ class _RiderRegisterState extends ConsumerState<RiderRegister> {
           child: SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+                minHeight: Get.height - Get.mediaQuery.padding.top,
               ),
               child: IntrinsicHeight(
                 child: Padding(
@@ -102,7 +94,7 @@ class _RiderRegisterState extends ConsumerState<RiderRegister> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Form(
-                            key: _formKey,
+                            key: controller.formKey,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -114,15 +106,15 @@ class _RiderRegisterState extends ConsumerState<RiderRegister> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-                                _buildTextField('เบอร์โทรศัพท์', _phoneController),
-                                _buildTextField('ชื่อ - สกุล', _nameController),
-                                _buildTextField('รหัสผ่าน', _passwordController, isPassword: true),
-                                _buildTextField('ยืนยันรหัสผ่าน', _confirmPasswordController, isPassword: true),
-                                _buildTextField('ที่อยู่', _addressController, maxLines: 3),
-                                _buildTextField('ทะเบียนรถ', _vehicleRegistrationController),
+                                _buildTextField('เบอร์โทรศัพท์', controller.phoneController),
+                                _buildTextField('ชื่อ - สกุล', controller.nameController),
+                                _buildTextField('รหัสผ่าน', controller.passwordController, isPassword: true),
+                                _buildTextField('ยืนยันรหัสผ่าน', controller.confirmPasswordController, isPassword: true),
+                                _buildTextField('ที่อยู่', controller.addressController, maxLines: 3),
+                                _buildTextField('ทะเบียนรถ', controller.vehicleRegistrationController),
                                 const Spacer(),
                                 ElevatedButton(
-                                  onPressed: _register,
+                                  onPressed: controller.register,
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white,
                                     backgroundColor: const Color(0xFF5300F9),
@@ -139,9 +131,7 @@ class _RiderRegisterState extends ConsumerState<RiderRegister> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
+                        onPressed: () => Get.back(),
                         child: const Text(
                           'เข้าสู่ระบบ',
                           style: TextStyle(color: Colors.white),
@@ -177,8 +167,8 @@ class _RiderRegisterState extends ConsumerState<RiderRegister> {
           if (value == null || value.isEmpty) {
             return 'กรุณากรอก$label';
           }
-          if (isPassword && controller == _confirmPasswordController) {
-            if (value != _passwordController.text) {
+          if (isPassword && controller == this.controller.confirmPasswordController) {
+            if (value != this.controller.passwordController.text) {
               return 'รหัสผ่านไม่ตรงกัน';
             }
           }

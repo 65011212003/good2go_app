@@ -2,18 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 import 'package:timeline_tile/timeline_tile.dart';
+import 'package:get/get.dart';
 
-class MapReceive extends StatefulWidget {
-  const MapReceive({Key? key}) : super(key: key);
-
-  @override
-  State<MapReceive> createState() => _MapReceiveState();
+class MapReceiveController extends GetxController {
+  final MapController mapController = MapController();
+  final latlong.LatLng center = latlong.LatLng(13.7563, 100.5018); // Bangkok coordinates
 }
 
-class _MapReceiveState extends State<MapReceive> {
-  final MapController mapController = MapController();
-
-  final latlong.LatLng _center = latlong.LatLng(13.7563, 100.5018); // Bangkok coordinates
+class MapReceive extends GetView<MapReceiveController> {
+  const MapReceive({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +26,7 @@ class _MapReceiveState extends State<MapReceive> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Get.back(),
                   ),
                   const Text(
                     'ข้อมูลการจัดส่งสินค้า',
@@ -75,9 +72,9 @@ class _MapReceiveState extends State<MapReceive> {
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: FlutterMap(
-                          mapController: mapController,
+                          mapController: controller.mapController,
                           options: MapOptions(
-                            initialCenter: _center,
+                            initialCenter: controller.center,
                             initialZoom: 11.0,
                           ),
                           children: [
