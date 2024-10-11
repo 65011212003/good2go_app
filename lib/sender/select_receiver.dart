@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:good2go_app/receiver/delivery_detail.dart';
 import 'package:good2go_app/services/apiServices.dart';
+import 'dart:developer' as developer;
 
 class SelectReceiverController extends GetxController {
   final ApiService apiService = Get.find<ApiService>();
@@ -18,22 +19,26 @@ class SelectReceiverController extends GetxController {
     try {
       final fetchedReceivers = await apiService.getAllUsers();
       receivers.assignAll(fetchedReceivers);
+      developer.log('Successfully fetched ${fetchedReceivers.length} receivers');
     } catch (e) {
-      print('Failed to fetch receivers: $e');
+      developer.log('Failed to fetch receivers: $e');
     }
   }
 
   void updateSearchQuery(String query) {
     searchQuery.value = query;
+    developer.log('Search query updated: $query');
   }
 
   List<Map<String, dynamic>> get filteredReceivers {
-    return receivers.where((receiver) {
+    final filtered = receivers.where((receiver) {
       final name = receiver['name'].toString().toLowerCase();
       final phone = receiver['phone_number'].toString().toLowerCase();
       final query = searchQuery.value.toLowerCase();
       return name.contains(query) || phone.contains(query);
     }).toList();
+    developer.log('Filtered receivers: ${filtered.length}');
+    return filtered;
   }
 }
 
@@ -43,6 +48,7 @@ class SelectReceiver extends GetView<SelectReceiverController> {
   @override
   Widget build(BuildContext context) {
     Get.put(SelectReceiverController());
+    developer.log('Building SelectReceiver widget');
 
     return Scaffold(
       body: SafeArea(
@@ -55,7 +61,10 @@ class SelectReceiver extends GetView<SelectReceiverController> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Get.back(),
+                    onPressed: () {
+                      developer.log('Back button pressed');
+                      Get.back();
+                    },
                   ),
                   const Text(
                     'เบอร์โทรศัพท์ผู้รับ',
@@ -78,7 +87,10 @@ class SelectReceiver extends GetView<SelectReceiverController> {
                         borderRadius: BorderRadius.circular(25),
                       ),
                       child: TextField(
-                        onChanged: controller.updateSearchQuery,
+                        onChanged: (value) {
+                          developer.log('Search text changed: $value');
+                          controller.updateSearchQuery(value);
+                        },
                         decoration: const InputDecoration(
                           hintText: 'Search',
                           border: InputBorder.none,
@@ -102,12 +114,15 @@ class SelectReceiver extends GetView<SelectReceiverController> {
             
             // List of Receivers
             Expanded(
-              child: Obx(() => ListView.builder(
-                itemCount: controller.filteredReceivers.length,
-                itemBuilder: (context, index) {
-                  return ReceiverCard(receiver: controller.filteredReceivers[index]);
-                },
-              )),
+              child: Obx(() {
+                developer.log('Rebuilding ListView with ${controller.filteredReceivers.length} items');
+                return ListView.builder(
+                  itemCount: controller.filteredReceivers.length,
+                  itemBuilder: (context, index) {
+                    return ReceiverCard(receiver: controller.filteredReceivers[index]);
+                  },
+                );
+              }),
             ),
             
             // Bottom Navigation
@@ -119,11 +134,15 @@ class SelectReceiver extends GetView<SelectReceiverController> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.home, color: Colors.white),
-                    onPressed: () {},
+                    onPressed: () {
+                      developer.log('Home button pressed');
+                    },
                   ),
                   IconButton(
                     icon: const Icon(Icons.person, color: Colors.white),
-                    onPressed: () {},
+                    onPressed: () {
+                      developer.log('Person button pressed');
+                    },
                   ),
                 ],
               ),
@@ -142,6 +161,7 @@ class ReceiverCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    developer.log('Building ReceiverCard for ${receiver['name']}');
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
@@ -171,6 +191,7 @@ class ReceiverCard extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
+                developer.log('Send button pressed for ${receiver['name']}');
                 Get.to(() => DeliveryDetail(receiver: receiver));
               },
               style: ElevatedButton.styleFrom(

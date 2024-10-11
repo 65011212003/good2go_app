@@ -2,46 +2,101 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:get/get.dart';
-import 'package:good2go_app/providers/delivery_provider.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:good2go_app/app_data.dart';
 
 class AddProductSenderController extends GetxController {
   final picker = ImagePicker();
   final nameController = TextEditingController();
   final detailsController = TextEditingController();
   final Rx<File?> image = Rx<File?>(null);
+  final RxString imageUrl = RxString('');
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future getImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
     if (pickedFile != null) {
       image.value = File(pickedFile.path);
+      await uploadImage(image.value!);
     }
   }
 
-  void addProduct() {
+  Future<void> uploadImage(File imageFile) async {
+    try {
+      String fileName = const Uuid().v4();
+      Reference ref = _storage.ref().child('product_images/$fileName');
+      UploadTask uploadTask = ref.putFile(imageFile);
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      imageUrl.value = downloadUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      Get.snackbar('Error', 'Failed to upload image. Please try again.');
+    }
+  }
+
+  Future<void> deleteImage() async {
+    if (imageUrl.isNotEmpty) {
+      try {
+        await FirebaseStorage.instance.refFromURL(imageUrl.value).delete();
+        imageUrl.value = '';
+        image.value = null;
+      } catch (e) {
+        print('Error deleting image: $e');
+        Get.snackbar('Error', 'Failed to delete image. Please try again.');
+      }
+    }
+  }
+
+  void addProduct(WidgetRef ref) async {
     if (nameController.text.isEmpty) {
       Get.snackbar('Error', 'Please enter a product name');
       return;
     }
 
-    final deliveryProvider = Get.find<DeliveryNotifier>();
-    deliveryProvider.addItem(
-      DeliveryItem(
-        itemName: nameController.text,
-        itemDescription: detailsController.text,
-        itemPhoto: image.value,
-      ),
+    final appDataNotifier = ref.read(appDataProvider.notifier);
+    DeliveryItem newItem = DeliveryItem(
+      itemName: nameController.text,
+      itemDescription: detailsController.text,
+      itemPhotoUrl: imageUrl.value,
     );
 
-    Get.snackbar('Success', 'Product added successfully');
-    Get.back();
+    // Add to Firestore
+    try {
+      await _firestore.collection('products').add({
+        'name': newItem.itemName,
+        'description': newItem.itemDescription,
+        'imageUrl': imageUrl.value,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      appDataNotifier.addTempDeliveryItem(newItem);
+
+      Get.snackbar('Success', 'Product added successfully');
+      Get.back(result: true);
+    } catch (e) {
+      print('Error adding product to Firestore: $e');
+      Get.snackbar('Error', 'Failed to add product. Please try again.');
+    }
+  }
+
+  @override
+  void onClose() {
+    nameController.dispose();
+    detailsController.dispose();
+    super.onClose();
   }
 }
 
-class AddProductSender extends GetView<AddProductSenderController> {
+class AddProductSender extends ConsumerWidget {
   const AddProductSender({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final controller = Get.put(AddProductSenderController());
 
     return Scaffold(
@@ -110,14 +165,14 @@ class AddProductSender extends GetView<AddProductSenderController> {
                       
                       // Product Image
                       Center(
-                        child: Obx(() => controller.image.value != null
-                            ? Image.file(
-                                controller.image.value!,
+                        child: Obx(() => controller.imageUrl.isNotEmpty
+                            ? Image.network(
+                                controller.imageUrl.value,
                                 height: 200,
                                 fit: BoxFit.contain,
                               )
                             : Image.network(
-                                'https://m.media-amazon.com/images/I/81hyQ4lDygL._AC_UF894,1000_QL80_.jpg', // Replace with actual image URL
+                                'https://m.media-amazon.com/images/I/81hyQ4lDygL._AC_UF894,1000_QL80_.jpg', // Replace with actual placeholder image URL
                                 height: 200,
                                 fit: BoxFit.contain,
                               ),
@@ -163,7 +218,10 @@ class AddProductSender extends GetView<AddProductSenderController> {
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () => Get.back(),
+                              onPressed: () {
+                                controller.deleteImage();
+                                Get.back();
+                              },
                               child: const Text('ยกเลิก', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
@@ -176,7 +234,9 @@ class AddProductSender extends GetView<AddProductSenderController> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: controller.addProduct,
+                              onPressed: () {
+                                controller.addProduct(ref);
+                              },
                               child: const Text('เพิ่ม', style: TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,

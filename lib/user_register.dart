@@ -5,9 +5,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:good2go_app/services/apiServices.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path/path.dart' as path;
 
 class UserRegisterController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -19,7 +20,7 @@ class UserRegisterController extends GetxController {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final addressController = TextEditingController();
-  final base64Image = RxnString();
+  final imageUrl = RxnString();
 
   final apiService = Get.find<ApiService>();
 
@@ -28,7 +29,25 @@ class UserRegisterController extends GetxController {
 
     if (pickedFile != null) {
       image.value = File(pickedFile.path);
-      base64Image.value = base64Encode(image.value!.readAsBytesSync());
+      await uploadImageToFirestore();
+    }
+  }
+
+  Future<void> uploadImageToFirestore() async {
+    if (image.value == null) return;
+
+    try {
+      final fileName = path.basename(image.value!.path);
+      final firebaseStorageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_images')
+          .child(fileName);
+
+      await firebaseStorageRef.putFile(image.value!);
+      final downloadUrl = await firebaseStorageRef.getDownloadURL();
+      imageUrl.value = downloadUrl;
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to upload image: $e');
     }
   }
 
@@ -39,7 +58,7 @@ class UserRegisterController extends GetxController {
           'phone_number': phoneController.text,
           'password': passwordController.text,
           'name': nameController.text,
-          'profile_picture': base64Image.value ?? '',
+          'profile_picture': imageUrl.value ?? '',
           'address': addressController.text,
           'gps_latitude': selectedLocation.value.latitude,
           'gps_longitude': selectedLocation.value.longitude,

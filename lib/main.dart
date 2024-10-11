@@ -1,32 +1,34 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:good2go_app/rider/rider_home.dart';
 import 'package:good2go_app/sender/sender_home.dart';
 import 'package:good2go_app/register_chose.dart';
 import 'package:good2go_app/services/apiServices.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
-import 'package:provider/provider.dart' as provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:good2go_app/app_data.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  Get.put(ApiService()); // Add this line to initialize ApiService
   runApp(
-    riverpod.ProviderScope(
-      child: provider.ChangeNotifierProvider<AppState>(
-        create: (_) => AppState(),
-        child: const MyApp(),
-      ),
+    const ProviderScope(
+      child: MyApp(),
     ),
   );
 }
 
-class AppState extends ChangeNotifier {
-  // Add your app state variables and methods here
-}
-
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GetMaterialApp(
       title: 'Good2Go',
       theme: ThemeData(
@@ -97,7 +99,7 @@ class LoginController extends GetxController {
     super.onClose();
   }
 
-  Future<void> login() async {
+  Future<void> login(WidgetRef ref) async {
     isLoading.value = true;
     errorMessage.value = null;
     try {
@@ -106,12 +108,26 @@ class LoginController extends GetxController {
         phoneController.text,
         passwordController.text,
       );
-      if (user['is_rider']) {
-        Get.off(() => const RiderHome());
+      
+      if (user != null) {
+        // Store user data using AppDataNotifier
+        ref.read(appDataProvider.notifier).setUserData(
+          id: user['id'] ?? '',
+          name: user['name'] ?? '',
+          type: user['is_rider'] == true ? 'rider' : 'sender',
+          imageUrl: user['profile_image_url'] ?? '',
+        );
+
+        if (user['is_rider'] == true) {
+          Get.off(() => const RiderHome());
+        } else {
+          Get.off(() => const SenderHome());
+        }
       } else {
-        Get.off(() => const SenderHome());
+        errorMessage.value = 'Login failed. Please try again.';
       }
     } catch (e) {
+      log('Login error: $e');
       errorMessage.value = 'An error occurred. Please try again.';
     } finally {
       isLoading.value = false;
@@ -119,11 +135,11 @@ class LoginController extends GetxController {
   }
 }
 
-class LoginPage extends GetView<LoginController> {
+class LoginPage extends ConsumerWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final controller = Get.put(LoginController());
 
     return Scaffold(
@@ -185,7 +201,7 @@ class LoginPage extends GetView<LoginController> {
                       Obx(() => controller.isLoading.value
                           ? const CircularProgressIndicator()
                           : ElevatedButton(
-                              onPressed: controller.login,
+                              onPressed: () => controller.login(ref),
                               style: ElevatedButton.styleFrom(
                                 foregroundColor: Colors.white,
                                 backgroundColor: const Color(0xFF5300F9),

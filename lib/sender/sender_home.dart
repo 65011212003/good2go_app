@@ -1,10 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:good2go_app/app_data.dart';
 import 'package:good2go_app/edit_profile.dart';
 import 'package:good2go_app/sender/send_package.dart';
+import 'package:good2go_app/services/apiServices.dart';
 
 class SenderHomeController extends GetxController {
-  // Add any necessary controller logic here
+  final apiService = Get.find<ApiService>();
+  final username = ''.obs;
+  final profileImageUrl = ''.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    try {
+      final appData = Get.find<AppData>();
+      final userData = await apiService.getUser(int.parse(appData.userId));
+      username.value = userData['username'] ?? 'Username';
+      profileImageUrl.value = userData['profileImageUrl'] ?? '';
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
 }
 
 class SenderHome extends GetView<SenderHomeController> {
@@ -43,10 +64,15 @@ class SenderHome extends GetView<SenderHomeController> {
                           ),
                           GestureDetector(
                             onTap: () => Get.to(() => const EditProfile()),
-                            child: CircleAvatar(
+                            child: Obx(() => CircleAvatar(
                               backgroundColor: Colors.grey[300],
-                              child: const Icon(Icons.person_outline, color: Colors.black),
-                            ),
+                              backgroundImage: controller.profileImageUrl.isNotEmpty
+                                  ? NetworkImage(controller.profileImageUrl.value)
+                                  : null,
+                              child: controller.profileImageUrl.isEmpty
+                                  ? const Icon(Icons.person_outline, color: Colors.black)
+                                  : null,
+                            )),
                           ),
                         ],
                       ),
@@ -134,7 +160,7 @@ class SenderHome extends GetView<SenderHomeController> {
                             child: const Icon(Icons.person_outline, color: Colors.black),
                           ),
                           const SizedBox(width: 10),
-                          const Text('Username', style: TextStyle(fontSize: 16)),
+                          Obx(() => Text(controller.username.value, style: const TextStyle(fontSize: 16))),
                         ],
                       ),
                     ),

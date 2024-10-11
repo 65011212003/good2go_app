@@ -3,9 +3,9 @@ import 'package:easy_stepper/easy_stepper.dart';
 import 'package:good2go_app/sender/add_product_sender.dart';
 import 'package:good2go_app/sender/picture_sender.dart';
 import 'package:get/get.dart';
-import 'package:good2go_app/services/apiServices.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:good2go_app/providers/delivery_provider.dart';
+import 'package:good2go_app/app_data.dart';
+import 'dart:developer' as developer;
 
 class DeliveryDetail extends ConsumerWidget {
   final Map<String, dynamic> receiver;
@@ -14,9 +14,13 @@ class DeliveryDetail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final apiService = Get.find<ApiService>();
-    final deliveryState = ref.watch(deliveryProvider);
-    final deliveryNotifier = ref.read(deliveryProvider.notifier);
+    final appData = ref.watch(appDataProvider);
+
+    // Add print statements for debugging
+    developer.log('Building DeliveryDetail');
+    developer.log('Receiver: $receiver');
+    developer.log('AppData: $appData');
+    developer.log('TempDeliveryItems: ${appData.tempDeliveryItems}');
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -60,7 +64,17 @@ class DeliveryDetail extends ConsumerWidget {
                                   color: const Color(0xBF5300F9),
                                   borderRadius: BorderRadius.circular(30),
                                 ),
-                                child: const Icon(Icons.person, color: Colors.white, size: 40),
+                                child: receiver['profile_picture'] != null && receiver['profile_picture'].isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(30),
+                                        child: Image.network(
+                                          receiver['profile_picture'],
+                                          fit: BoxFit.cover,
+                                          width: 60,
+                                          height: 60,
+                                        ),
+                                      )
+                                    : const Icon(Icons.person, color: Colors.white, size: 40),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -115,13 +129,16 @@ class DeliveryDetail extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('รายการจัดส่ง (${deliveryState.items.length})', style: TextStyle(fontSize: 16)),
+                          Text('รายการจัดส่ง (${appData.tempDeliveryItems.length})', style: TextStyle(fontSize: 16)),
                           ElevatedButton.icon(
                             onPressed: () async {
+                              developer.log('Adding new product');
                               final result = await Get.to(() => const AddProductSender());
+                              developer.log('Result from AddProductSender: $result');
                               if (result == true) {
                                 // Refresh the list if a new item was added
-                                ref.refresh(deliveryProvider);
+                                ref.refresh(appDataProvider);
+                                developer.log('AppData refreshed');
                               }
                             },
                             icon: const Icon(Icons.add, color: Colors.white),
@@ -138,23 +155,38 @@ class DeliveryDetail extends ConsumerWidget {
                       const SizedBox(height: 16),
 
                       // Display the list of added items
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: deliveryState.items.length,
-                        itemBuilder: (context, index) {
-                          final item = deliveryState.items[index];
-                          return ListTile(
-                            leading: item.itemPhoto != null
-                                ? Image.file(item.itemPhoto!, width: 50, height: 50, fit: BoxFit.cover)
-                                : Icon(Icons.image_not_supported),
-                            title: Text(item.itemName),
-                            subtitle: Text(item.itemDescription ?? ''),
-                            trailing: IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () => deliveryNotifier.removeItem(index),
-                            ),
-                          );
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final appData = ref.watch(appDataProvider);
+                          developer.log('Rebuilding ListView: ${appData.tempDeliveryItems.length} items');
+                          return appData.tempDeliveryItems.isEmpty
+                              ? Text('No items added yet.', style: TextStyle(fontSize: 16))
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemCount: appData.tempDeliveryItems.length,
+                                  itemBuilder: (context, index) {
+                                    final item = appData.tempDeliveryItems[index];
+                                    developer.log('Building item: $item');
+                                    return Card(
+                                      margin: EdgeInsets.only(bottom: 8),
+                                      child: ListTile(
+                                        leading: item.itemPhotoUrl != null && item.itemPhotoUrl!.isNotEmpty
+                                            ? Image.network(item.itemPhotoUrl!, width: 50, height: 50, fit: BoxFit.cover)
+                                            : Icon(Icons.image_not_supported),
+                                        title: Text(item.itemName),
+                                        subtitle: Text(item.itemDescription ?? ''),
+                                        trailing: IconButton(
+                                          icon: Icon(Icons.delete),
+                                          onPressed: () {
+                                            final appDataNotifier = ref.read(appDataProvider.notifier);
+                                            appDataNotifier.removeTempDeliveryItem(index);
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
                         },
                       ),
                     ],

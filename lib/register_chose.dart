@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:good2go_app/main.dart';
 import 'package:good2go_app/rider_register.dart';
+import 'package:good2go_app/services/apiServices.dart';
 import 'package:good2go_app/user_register.dart';
 
 class RegisterSelectPage extends StatelessWidget {
@@ -9,6 +10,9 @@ class RegisterSelectPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Initialize ApiService
+    Get.put(ApiService());
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(

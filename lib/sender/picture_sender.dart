@@ -5,6 +5,9 @@ import 'package:get/get.dart';
 import 'package:good2go_app/services/apiServices.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 
 class PictureSenderController extends GetxController {
   final int deliveryId;
@@ -12,6 +15,8 @@ class PictureSenderController extends GetxController {
   final RxInt activeStep = 1.obs;
   final Rx<File?> deliveryPhoto = Rx<File?>(null);
   final picker = ImagePicker();
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   PictureSenderController({required this.deliveryId, required this.receiver});
 
@@ -19,6 +24,20 @@ class PictureSenderController extends GetxController {
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
       deliveryPhoto.value = File(pickedFile.path);
+    }
+  }
+
+  Future<String?> uploadImage(File imageFile) async {
+    try {
+      String fileName = const Uuid().v4();
+      Reference ref = _storage.ref().child('delivery_images/$fileName');
+      UploadTask uploadTask = ref.putFile(imageFile);
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
     }
   }
 
@@ -30,7 +49,25 @@ class PictureSenderController extends GetxController {
 
     try {
       final apiService = Get.find<ApiService>();
-      Get.to(() => FinishSender(deliveryId: deliveryId));
+      
+      // Upload image to Firebase Storage
+      String? imageUrl = await uploadImage(deliveryPhoto.value!);
+      
+      if (imageUrl != null) {
+        // Add delivery data to Firestore
+        await _firestore.collection('deliveries').add({
+          'deliveryId': deliveryId,
+          'receiverName': receiver['name'],
+          'receiverAddress': receiver['address'],
+          'receiverPhone': receiver['phone_number'],
+          'imageUrl': imageUrl,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        
+        Get.to(() => FinishSender(deliveryId: deliveryId));
+      } else {
+        Get.snackbar('Error', 'Failed to upload image');
+      }
     } catch (e) {
       Get.snackbar('Error', 'Failed to create delivery: $e');
     }
