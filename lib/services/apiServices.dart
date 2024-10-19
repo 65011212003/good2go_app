@@ -1,12 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+ // Start of Selection
 import 'dart:convert';
 import 'dart:io';
 
 final apiServiceProvider = Provider((ref) => ApiService());
 
 class ApiService {
-  static const String baseUrl = 'https://rider-version2.onrender.com';
+  static const String baseUrl = 'https://your-fastapi-server-url.com';
 
   Future<Map<String, dynamic>> login(String phoneNumber, String password) async {
     final response = await http.post(
@@ -271,5 +272,66 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> registerUser(Map<String, dynamic> userData) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/users/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(userData),
+    );
 
-}
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to register user: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> loginUser(String phoneNumber, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/users/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'phone_number': phoneNumber,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to login: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> createSending(int userId, Map<String, dynamic> sendingData) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/sendings/'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        ...sendingData,
+        'user_id': userId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to create sending: ${response.body}');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getUserSendings(int userId) async {
+    final response = await http.get(Uri.parse('$baseUrl/users/$userId/sendings/'));
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(json.decode(response.body));
+    } else {
+      throw Exception('Failed to get user sendings: ${response.body}');
+    }
+  }
+
+  Future<WebSocket> connectToRiderTracking() async {
+    final wsUrl = Uri.parse('wss://your-fastapi-server-url.com/ws/track-riders');
+    return await WebSocket.connect(wsUrl.toString());
+  }
+  }
